@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_melt"
-Attribute VB_Base = "0{5F841FC5-6573-42E7-BCCB-D6743F6AF43F}{09A814D0-A9F1-4B43-9EBC-5323F694C2B9}"
+Attribute VB_Base = "0{CC590948-255D-4BFB-8FB5-30DE10A43350}{00F23762-3C63-4619-AF49-843B0FF1B54A}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -12,6 +12,7 @@ Option Explicit
 Public WithEvents btnRun As MSForms.CommandButton
 Attribute btnRun.VB_VarHelpID = -1
 Public WithEvents btnCancel As MSForms.CommandButton
+Attribute btnCancel.VB_VarHelpID = -1
 
 Private Sub UserForm_Initialize()
     ' Purpose: Dynamically create and configure controls on the UserForm.

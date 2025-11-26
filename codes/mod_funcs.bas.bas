@@ -676,3 +676,4 @@ Public Function MeltData(ByVal tableRange As Range, ByVal idColumnsRange As Rang
     MeltData = result
     
 End Function
+
