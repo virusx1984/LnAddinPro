@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_compare_setup"
-Attribute VB_Base = "0{CC954C11-04D7-49A1-A693-9B5307FA9CFD}{31E73844-3361-49A3-BCBF-98A78FE39215}"
+Attribute VB_Base = "0{6753D7B7-20BD-4F7C-804B-777080770CEC}{31E73844-3361-49A3-BCBF-98A78FE39215}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -7,8 +7,7 @@ Attribute VB_Exposed = False
 Attribute VB_TemplateDerived = False
 Attribute VB_Customizable = False
 ' UserForm: frm_compare_setup
-' Purpose: Compare Setup with Index, Ignore, and Reference Source (A vs B) selection.
-'          (Simplified: No Re-ordering)
+' Purpose: Compare Setup with Index, Reference Source, and Output Cell selection.
 Option Explicit
 
 ' --- 1. Event Handler Declarations ---
@@ -24,11 +23,9 @@ Public WithEvents btnSetCompare As MSForms.CommandButton
 Attribute btnSetCompare.VB_VarHelpID = -1
 Public WithEvents btnSetIgnore As MSForms.CommandButton
 Attribute btnSetIgnore.VB_VarHelpID = -1
-
-' Reference Buttons
-Public WithEvents btnRefUseA As MSForms.CommandButton ' Reference from Range A
+Public WithEvents btnRefUseA As MSForms.CommandButton
 Attribute btnRefUseA.VB_VarHelpID = -1
-Public WithEvents btnRefUseB As MSForms.CommandButton ' Reference from Range B
+Public WithEvents btnRefUseB As MSForms.CommandButton
 Attribute btnRefUseB.VB_VarHelpID = -1
 
 ' Action Buttons
@@ -45,6 +42,9 @@ Public txtName2 As Object
 Public lstColumns As MSForms.ListBox
 Public frameConfig As MSForms.Frame
 
+' [NEW] Output Control
+Public refOutput As Object
+
 ' --- 3. Layout Constants ---
 Const MARGIN As Long = 10
 Const CTRL_H As Long = 20
@@ -56,7 +56,7 @@ Private Sub UserForm_Initialize()
     
     Me.Caption = "Compare Setup"
     Me.Width = 480
-    Me.Height = 450 ' Height reduced since we removed buttons
+    Me.Height = 500 ' Increased height for Output control
     
     Dim currentTop As Long: currentTop = MARGIN
     
@@ -122,7 +122,7 @@ Private Sub UserForm_Initialize()
         .Left = MARGIN
         .Top = currentTop
         .Width = Me.InsideWidth - (MARGIN * 2)
-        .Height = 230 ' Height reduced
+        .Height = 230
         .Enabled = False
     End With
     
@@ -134,68 +134,49 @@ Private Sub UserForm_Initialize()
         .MultiSelect = fmMultiSelectExtended
     End With
     
-    ' --- Buttons (Right Side) ---
+    ' --- Configuration Buttons ---
     Dim btnLeft As Long: btnLeft = 280
     Dim btnTop As Long: btnTop = 20
     
-    ' Label: Key (Corrected syntax)
+    ' Label: Key
     With frameConfig.Controls.Add("Forms.Label.1", "lblKey")
-        .Caption = "Match By:"
-        .Left = btnLeft
-        .Top = btnTop
-        .Width = 80
-        .Height = 15
+        .Caption = "Match By:": .Left = btnLeft: .Top = btnTop: .Width = 80: .Height = 15
     End With
     btnTop = btnTop + 15
-    
     Set btnSetIndex = frameConfig.Controls.Add("Forms.CommandButton.1", "btnSetIndex")
     With btnSetIndex
         .Caption = "INDEX (Key)": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
     End With
     btnTop = btnTop + 30
     
-    ' Label: Reference (Corrected syntax)
+    ' Label: Ref
     With frameConfig.Controls.Add("Forms.Label.1", "lblRef")
-        .Caption = "Reference Source:"
-        .Left = btnLeft
-        .Top = btnTop
-        .Width = 100
-        .Height = 15
+        .Caption = "Reference Source:": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 15
     End With
     btnTop = btnTop + 15
-    
-    ' REF A Button
     Set btnRefUseA = frameConfig.Controls.Add("Forms.CommandButton.1", "btnRefUseA")
     With btnRefUseA
         .Caption = "REF (Use A)": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
-        .ControlTipText = "Reference column: Value taken from Range A"
+        .ControlTipText = "Value from Range A"
     End With
     btnTop = btnTop + 25
-    
-    ' REF B Button
     Set btnRefUseB = frameConfig.Controls.Add("Forms.CommandButton.1", "btnRefUseB")
     With btnRefUseB
         .Caption = "REF (Use B)": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
-        .ControlTipText = "Reference column: Value taken from Range B"
+        .ControlTipText = "Value from Range B"
     End With
     btnTop = btnTop + 30
     
-    ' Label: Others (Corrected syntax)
+    ' Label: Other
     With frameConfig.Controls.Add("Forms.Label.1", "lblOth")
-        .Caption = "Comparison:"
-        .Left = btnLeft
-        .Top = btnTop
-        .Width = 80
-        .Height = 15
+        .Caption = "Comparison:": .Left = btnLeft: .Top = btnTop: .Width = 80: .Height = 15
     End With
     btnTop = btnTop + 15
-
     Set btnSetCompare = frameConfig.Controls.Add("Forms.CommandButton.1", "btnSetCompare")
     With btnSetCompare
         .Caption = "COMPARE": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
     End With
     btnTop = btnTop + 25
-    
     Set btnSetIgnore = frameConfig.Controls.Add("Forms.CommandButton.1", "btnSetIgnore")
     With btnSetIgnore
         .Caption = "IGNORE": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
@@ -204,16 +185,49 @@ Private Sub UserForm_Initialize()
     currentTop = currentTop + 240
     
     ' ============================
-    ' SECTION 3: ACTION
+    ' SECTION 3: OUTPUT SELECTION [NEW]
     ' ============================
+    
+    With Me.Controls.Add("Forms.Label.1", "lblOut")
+        .Caption = "4. Output Cell:"
+        .Left = MARGIN
+        .Top = currentTop + 3
+        .Width = LBL_W
+        .Font.Bold = True
+    End With
+    
+    Set refOutput = Me.Controls.Add("RefEdit.Ctrl", "refOutput")
+    With refOutput
+        .Left = MARGIN + LBL_W
+        .Top = currentTop
+        .Width = INPUT_W
+        .Height = CTRL_H
+    End With
+    
+    currentTop = currentTop + 35
+    
+    ' ============================
+    ' SECTION 4: ACTION
+    ' ============================
+    
     Set btnRun = Me.Controls.Add("Forms.CommandButton.1", "btnRun")
     With btnRun
-        .Caption = "Run Comparison": .Left = Me.InsideWidth - 220: .Top = currentTop: .Width = 120: .Height = 30: .Font.Bold = True: .Enabled = False
+        .Caption = "Run Comparison"
+        .Left = Me.InsideWidth - 220
+        .Top = currentTop
+        .Width = 120
+        .Height = 30
+        .Font.Bold = True
+        .Enabled = False
     End With
     
     Set btnClose = Me.Controls.Add("Forms.CommandButton.1", "btnClose")
     With btnClose
-        .Caption = "Close": .Left = Me.InsideWidth - 90: .Top = currentTop: .Width = 80: .Height = 30
+        .Caption = "Close"
+        .Left = Me.InsideWidth - 90
+        .Top = currentTop
+        .Width = 80
+        .Height = 30
     End With
     
     Me.Height = currentTop + 70
@@ -231,7 +245,7 @@ Private Sub btnValidate_Click()
     Set rng2 = Range(refRange2.Text)
     On Error GoTo 0
     
-    If rng1 Is Nothing Or rng2 Is Nothing Then MsgBox "Invalid ranges.", vbCritical: Exit Sub
+    If rng1 Is Nothing Or rng2 Is Nothing Then MsgBox "Invalid input ranges.", vbCritical: Exit Sub
     If rng1.Columns.Count <> rng2.Columns.Count Then MsgBox "Column count mismatch.", vbCritical: Exit Sub
     
     headers1 = rng1.Rows(1).Value
@@ -265,84 +279,146 @@ End Sub
 Private Sub btnSetIndex_Click()
     UpdateColumnStatus "INDEX"
 End Sub
-
 Private Sub btnRefUseA_Click()
     UpdateColumnStatus "REF: Range A"
 End Sub
-
 Private Sub btnRefUseB_Click()
     UpdateColumnStatus "REF: Range B"
 End Sub
-
 Private Sub btnSetCompare_Click()
     UpdateColumnStatus "COMPARE"
 End Sub
-
 Private Sub btnSetIgnore_Click()
     UpdateColumnStatus "IGNORE"
 End Sub
 
 ' --- RUN HANDLER ---
+' --- RUN HANDLER (UPDATED) ---
 Private Sub btnRun_Click()
-    Dim indexCols As String
-    Dim ignoreCols As String
-    Dim referenceCols As String
-    Dim vlookupOrderCols As String ' Columns that need to pull from Range B
+    Dim rngA As Range
+    Dim rngB As Range
+    Dim outputRng As Range
+    
+    ' Parameter Strings
+    Dim strIndex As String
+    Dim strIgnore As String
+    Dim strRef As String
+    
+    ' Function Arguments
+    Dim arrIndex As Variant
+    Dim arrIgnore As Variant
+    Dim arrRef As Variant
+    Dim bVlookupOrder As Boolean
     
     Dim i As Long
     Dim status As String
     Dim colName As String
+    Dim hasRangeBPrio As Boolean
     
-    ' Loop through the ListBox
+    ' 1. Validate Output Range
+    On Error Resume Next
+    Set outputRng = Range(refOutput.Text)
+    Set rngA = Range(refRange1.Text)
+    Set rngB = Range(refRange2.Text)
+    On Error GoTo 0
+    
+    If outputRng Is Nothing Then
+        MsgBox "Please select a valid Output Cell.", vbExclamation
+        refOutput.SetFocus
+        Exit Sub
+    End If
+    
+    ' Ensure we only use the top-left cell for output
+    Set outputRng = outputRng.Cells(1, 1)
+    
+    ' 2. Loop through ListBox to classify columns
+    hasRangeBPrio = False ' Default to False (Range A priority)
+    
     For i = 0 To lstColumns.listCount - 1
         colName = lstColumns.List(i, 0)
         status = lstColumns.List(i, 1)
         
         Select Case status
             Case "INDEX"
-                indexCols = indexCols & colName & ","
+                strIndex = strIndex & colName & ","
                 
             Case "IGNORE"
-                ignoreCols = ignoreCols & colName & ","
+                strIgnore = strIgnore & colName & ","
                 
             Case "REF: Range A"
-                referenceCols = referenceCols & colName & ","
+                strRef = strRef & colName & ","
+                ' Range A priority is default, so bVlookupOrder remains False (or unchanged)
                 
             Case "REF: Range B"
-                referenceCols = referenceCols & colName & ","
-                vlookupOrderCols = vlookupOrderCols & colName & ","
+                strRef = strRef & colName & ","
+                ' User explicitly asked for Range B value.
+                ' Note: Your function CompareExcelRanges takes a single Boolean for ALL ref columns.
+                ' If ANY column requires Range B, we set the global flag to True.
+                hasRangeBPrio = True
                 
-            ' Case "COMPARE" is implicit
+            ' Case "COMPARE" is implicit (columns not in Index/Ignore/Ref are compared)
         End Select
     Next i
     
-    ' Clean commas
-    indexCols = StripComma(indexCols)
-    ignoreCols = StripComma(ignoreCols)
-    referenceCols = StripComma(referenceCols)
-    vlookupOrderCols = StripComma(vlookupOrderCols)
+    ' 3. Convert Strings to Arrays (Required by your function)
+    ' We use a helper function to ensure empty strings become Empty Arrays, not Array("") containing an empty string.
+    arrIndex = StringToArray(strIndex)
+    arrIgnore = StringToArray(strIgnore)
+    arrRef = StringToArray(strRef)
     
-    If Len(indexCols) = 0 Then
+    ' Set the boolean order
+    bVlookupOrder = hasRangeBPrio
+    
+    ' Check mandatory Index
+    If IsEmpty(arrIndex) Then
         MsgBox "Please select at least one INDEX column.", vbExclamation
         Exit Sub
     End If
     
-    ' --- DEBUG: Show Parameters ---
-    Dim msg As String
-    msg = "Execute Parameters:" & vbCrLf & _
-          "Ranges: " & refRange1.Text & " vs " & refRange2.Text & vbCrLf & _
-          "------------------------" & vbCrLf & _
-          "INDEX: " & indexCols & vbCrLf & _
-          "IGNORE: " & ignoreCols & vbCrLf & _
-          "REFERENCE: " & referenceCols & vbCrLf & _
-          "USE RANGE B FOR: " & vlookupOrderCols
-          
-    MsgBox msg, vbInformation, "Debug"
+    ' 4. Call the Function
+    Dim resultData As Variant
     
-    ' Call your actual function here:
-    ' YourFunction Range(refRange1.Text), Range(refRange2.Text), indexCols, ignoreCols, referenceCols, vlookupOrderCols
+    ' Assuming CompareExcelRanges is in a Standard Module (e.g., mod_funcs)
+    ' If it's in the same form code (not recommended), call it directly.
+    ' Ideally, call it from the module:
+    resultData = mod_funcs.CompareExcelRanges(rngA, rngB, arrIndex, arrIgnore, arrRef, bVlookupOrder)
     
-    Unload Me
+    ' 5. Output the Result
+    If IsArray(resultData) Then
+        Dim rCount As Long, cCount As Long
+        rCount = UBound(resultData, 1)
+        cCount = UBound(resultData, 2)
+        
+        ' Check if function returned an Error Array (1D inner array check)
+        ' Your function returns Array(Array("Error...")) on failure.
+        ' A standard check: if row 1, col 1 starts with "Error"
+        If InStr(1, CStr(resultData(1, 1)), "Error", vbTextCompare) > 0 Then
+            MsgBox "Comparison Function Error: " & vbCrLf & resultData(1, 1), vbCritical
+            Exit Sub
+        End If
+        
+        ' Write to Excel
+        Dim wsOut As Worksheet
+        Set wsOut = outputRng.Worksheet
+        wsOut.Activate
+        
+        ' Clear previous data area (Optional, be careful)
+        ' outputRng.CurrentRegion.ClearContents
+        
+        ' Dump Array
+        outputRng.Resize(rCount, cCount).Value = resultData
+        
+        ' Styling (Optional)
+        outputRng.Resize(1, cCount).Font.Bold = True ' Header
+        outputRng.Resize(rCount, cCount).EntireColumn.AutoFit
+        
+        MsgBox "Comparison Complete! Results generated at " & outputRng.Address(External:=False), vbInformation
+        
+        Unload Me
+    Else
+        MsgBox "The function did not return a valid array.", vbCritical
+    End If
+    
 End Sub
 
 Private Sub btnClose_Click()
@@ -366,5 +442,24 @@ End Sub
 
 Private Function StripComma(s As String) As String
     If Len(s) > 0 Then If Right(s, 1) = "," Then StripComma = Left(s, Len(s) - 1) Else StripComma = s
+End Function
+
+' --- Helper to convert Comma String to Array ---
+Private Function StringToArray(ByVal strList As String) As Variant
+    ' Removes trailing comma and returns an Array of strings.
+    ' Returns Empty if string is blank.
+    
+    If Len(strList) = 0 Then
+        StringToArray = Array() ' Return empty array
+        Exit Function
+    End If
+    
+    ' Remove trailing comma
+    If Right(strList, 1) = "," Then
+        strList = Left(strList, Len(strList) - 1)
+    End If
+    
+    ' Split into array
+    StringToArray = Split(strList, ",")
 End Function
 
