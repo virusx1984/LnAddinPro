@@ -418,17 +418,21 @@ ErrorHandler:
     CompareExcelRanges = Array(Array("Error: Unexpected runtime error. Number: " & Err.Number & ", Description: " & Err.Description))
 End Function
 
-' --- Helper Subroutine ---
+' --- Updated Helper Subroutine to Handle Duplicates via Summation ---
 
 Private Sub PopulateDictionary(ByVal rng As Range, ByVal indexCols As Object, ByRef targetDict As Object)
-    ' Extracts data from a range (excluding header) and stores it in a dictionary.
+    ' Extracts data from a range (excluding header).
+    ' [NEW LOGIC]: If a duplicate Index Key is found, numeric values are SUMMED.
     
     Dim dataRange As Range
     Dim dataArray As Variant
     Dim r As Long
-    Dim i As Long
+    Dim c As Long
     Dim colIndex As Variant
     Dim keyString As String
+    Dim existingValues As Variant
+    Dim newValues() As Variant
+    Dim arrayColCount As Long
     
     ' Adjust range to exclude the header row
     Set dataRange = rng.Offset(1, 0).Resize(rng.Rows.Count - 1, rng.Columns.Count)
@@ -437,15 +441,13 @@ Private Sub PopulateDictionary(ByVal rng As Range, ByVal indexCols As Object, By
     
     ' Read data into a single array for faster processing
     dataArray = dataRange.Value
-    
-    ' Determine array boundaries for the rowValues array
-    Dim arrayColCount As Long
     arrayColCount = UBound(dataArray, 2)
     
+    ' Loop through every row in the source data
     For r = 1 To UBound(dataArray, 1)
         keyString = ""
         
-        ' Build the key string by concatenating index column values
+        ' Build the key string
         For Each colIndex In indexCols.Items
             keyString = keyString & CStr(dataArray(r, colIndex)) & "|"
         Next colIndex
@@ -453,16 +455,48 @@ Private Sub PopulateDictionary(ByVal rng As Range, ByVal indexCols As Object, By
         ' Remove trailing separator
         If Len(keyString) > 0 Then keyString = Left(keyString, Len(keyString) - 1)
         
-        ' Store the entire row's data array against the unique key
+        ' Check if key already exists
         If Not targetDict.Exists(keyString) Then
+            ' --- CASE 1: NEW KEY ---
+            ' Create new array and store it
+            ReDim newValues(1 To arrayColCount)
+            For c = 1 To arrayColCount
+                newValues(c) = dataArray(r, c)
+            Next c
+            targetDict.Add keyString, newValues
+        Else
+            ' --- CASE 2: DUPLICATE KEY (SUMMATION LOGIC) ---
+            ' Retrieve existing data array
+            existingValues = targetDict.Item(keyString)
             
-            Dim rowValues() As Variant
-            ReDim rowValues(1 To arrayColCount)
+            For c = 1 To arrayColCount
+                ' Check if this column is part of the Index (Keys shouldn't be summed)
+                ' We iterate through indexCols items to see if 'c' is an index column.
+                Dim isIndexCol As Boolean
+                isIndexCol = False
+                
+                For Each colIndex In indexCols.Items
+                    If CLng(colIndex) = c Then
+                        isIndexCol = True
+                        Exit For
+                    End If
+                Next colIndex
+                
+                ' Only sum if it's NOT an index column AND both values are numeric
+                If Not isIndexCol Then
+                    If IsNumeric(existingValues(c)) And IsNumeric(dataArray(r, c)) Then
+                        ' Perform Summation
+                        existingValues(c) = CDbl(existingValues(c)) + CDbl(dataArray(r, c))
+                    Else
+                        ' Optional: If non-numeric data differs, you might want to mark it?
+                        ' For now, we keep the FIRST value found (standard aggregation behavior for non-numerics)
+                        ' or you could overwrite it: existingValues(c) = dataArray(r, c)
+                    End If
+                End If
+            Next c
             
-            For i = 1 To arrayColCount
-                rowValues(i) = dataArray(r, i)
-            Next
-            targetDict.Add keyString, rowValues
+            ' Update the dictionary with the summed array
+            targetDict.Item(keyString) = existingValues
         End If
     Next r
 End Sub
