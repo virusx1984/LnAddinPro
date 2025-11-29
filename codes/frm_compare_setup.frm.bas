@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_compare_setup"
-Attribute VB_Base = "0{31635FC0-2060-4846-BF2A-E368A2EAE57A}{31E73844-3361-49A3-BCBF-98A78FE39215}"
+Attribute VB_Base = "0{B3F5802D-1A30-4225-99D9-61EE14947A08}{06A78BAF-63B8-4ACD-986A-41632A8058BF}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -7,7 +7,8 @@ Attribute VB_Exposed = False
 Attribute VB_TemplateDerived = False
 Attribute VB_Customizable = False
 ' UserForm: frm_compare_setup
-' Purpose: Compare Setup with Index, Reference Source, and Output Cell selection.
+' Purpose: Complete Wizard with Range Selection, Column Roles, Ordering, Formatting, and Execution.
+' UPDATED: Adapted for the new CompareExcelRanges signature with Optional arguments and Dictionary-based Reference Directions.
 Option Explicit
 
 ' --- 1. Event Handler Declarations ---
@@ -27,6 +28,8 @@ Public WithEvents btnRefUseA As MSForms.CommandButton
 Attribute btnRefUseA.VB_VarHelpID = -1
 Public WithEvents btnRefUseB As MSForms.CommandButton
 Attribute btnRefUseB.VB_VarHelpID = -1
+Public WithEvents btnSetFormat As MSForms.CommandButton
+Attribute btnSetFormat.VB_VarHelpID = -1
 
 ' Action Buttons
 Public WithEvents btnRun As MSForms.CommandButton
@@ -39,11 +42,9 @@ Public refRange1 As Object
 Public refRange2 As Object
 Public txtName1 As Object
 Public txtName2 As Object
+Public refOutput As Object
 Public lstColumns As MSForms.ListBox
 Public frameConfig As MSForms.Frame
-
-' [NEW] Output Control
-Public refOutput As Object
 
 ' --- 3. Layout Constants ---
 Const MARGIN As Long = 10
@@ -54,9 +55,9 @@ Const INPUT_W As Long = 180
 
 Private Sub UserForm_Initialize()
     
-    Me.Caption = "Compare Setup"
-    Me.Width = 480
-    Me.Height = 500 ' Increased height for Output control
+    Me.Caption = "Compare Setup (Complete)"
+    Me.Width = 550
+    Me.Height = 550
     
     Dim currentTop As Long: currentTop = MARGIN
     
@@ -64,10 +65,9 @@ Private Sub UserForm_Initialize()
     ' SECTION 1: RANGE SELECTION
     ' ============================
     
-    ' --- Range 1 ---
+    ' --- Range A ---
     With Me.Controls.Add("Forms.Label.1", "lblRng1")
-        .Caption = "1. Range A:"
-        .Left = MARGIN: .Top = currentTop + 3: .Width = LBL_W
+        .Caption = "1. Range A:": .Left = MARGIN: .Top = currentTop + 3: .Width = LBL_W
     End With
     Set refRange1 = Me.Controls.Add("RefEdit.Ctrl", "refRange1")
     With refRange1
@@ -83,10 +83,9 @@ Private Sub UserForm_Initialize()
     End With
     currentTop = currentTop + CTRL_H + GAP
     
-    ' --- Range 2 ---
+    ' --- Range B ---
     With Me.Controls.Add("Forms.Label.1", "lblRng2")
-        .Caption = "2. Range B:"
-        .Left = MARGIN: .Top = currentTop + 3: .Width = LBL_W
+        .Caption = "2. Range B:": .Left = MARGIN: .Top = currentTop + 3: .Width = LBL_W
     End With
     Set refRange2 = Me.Controls.Add("RefEdit.Ctrl", "refRange2")
     With refRange2
@@ -118,27 +117,28 @@ Private Sub UserForm_Initialize()
     
     Set frameConfig = Me.Controls.Add("Forms.Frame.1", "frameConfig")
     With frameConfig
-        .Caption = "3. Column Config"
+        .Caption = "3. Column Config (Role, Order & Format)"
         .Left = MARGIN
         .Top = currentTop
         .Width = Me.InsideWidth - (MARGIN * 2)
-        .Height = 230
+        .Height = 280
         .Enabled = False
     End With
     
-    ' ListBox
+    ' ListBox (3 Columns: Name, Role, Format)
     Set lstColumns = frameConfig.Controls.Add("Forms.ListBox.1", "lstColumns")
     With lstColumns
-        .Left = 10: .Top = 20: .Width = 260: .Height = 200
-        .ColumnCount = 2: .ColumnWidths = "160;80"
+        .Left = 10: .Top = 20: .Width = 340: .Height = 250
+        .ColumnCount = 3
+        .ColumnWidths = "150;90;80"
         .MultiSelect = fmMultiSelectExtended
     End With
     
-    ' --- Configuration Buttons ---
-    Dim btnLeft As Long: btnLeft = 280
+    ' --- Buttons (Right Side) ---
+    Dim btnLeft As Long: btnLeft = 360
     Dim btnTop As Long: btnTop = 20
     
-    ' Label: Key
+    ' Key
     With frameConfig.Controls.Add("Forms.Label.1", "lblKey")
         .Caption = "Match By:": .Left = btnLeft: .Top = btnTop: .Width = 80: .Height = 15
     End With
@@ -149,27 +149,25 @@ Private Sub UserForm_Initialize()
     End With
     btnTop = btnTop + 30
     
-    ' Label: Ref
+    ' Reference
     With frameConfig.Controls.Add("Forms.Label.1", "lblRef")
-        .Caption = "Reference Source:": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 15
+        .Caption = "Reference Src:": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 15
     End With
     btnTop = btnTop + 15
     Set btnRefUseA = frameConfig.Controls.Add("Forms.CommandButton.1", "btnRefUseA")
     With btnRefUseA
         .Caption = "REF (Use A)": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
-        .ControlTipText = "Value from Range A"
     End With
     btnTop = btnTop + 25
     Set btnRefUseB = frameConfig.Controls.Add("Forms.CommandButton.1", "btnRefUseB")
     With btnRefUseB
         .Caption = "REF (Use B)": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
-        .ControlTipText = "Value from Range B"
     End With
     btnTop = btnTop + 30
     
-    ' Label: Other
+    ' Compare/Ignore
     With frameConfig.Controls.Add("Forms.Label.1", "lblOth")
-        .Caption = "Comparison:": .Left = btnLeft: .Top = btnTop: .Width = 80: .Height = 15
+        .Caption = "Action:": .Left = btnLeft: .Top = btnTop: .Width = 80: .Height = 15
     End With
     btnTop = btnTop + 15
     Set btnSetCompare = frameConfig.Controls.Add("Forms.CommandButton.1", "btnSetCompare")
@@ -181,53 +179,38 @@ Private Sub UserForm_Initialize()
     With btnSetIgnore
         .Caption = "IGNORE": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
     End With
+    btnTop = btnTop + 30
     
-    currentTop = currentTop + 240
-    
-    ' ============================
-    ' SECTION 3: OUTPUT SELECTION [NEW]
-    ' ============================
-    
-    With Me.Controls.Add("Forms.Label.1", "lblOut")
-        .Caption = "4. Output Cell:"
-        .Left = MARGIN
-        .Top = currentTop + 3
-        .Width = LBL_W
-        .Font.Bold = True
+    ' Formatting
+    Set btnSetFormat = frameConfig.Controls.Add("Forms.CommandButton.1", "btnSetFormat")
+    With btnSetFormat
+        .Caption = "Set Format ($%)": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
     End With
     
+    currentTop = currentTop + 290
+    
+    ' ============================
+    ' SECTION 3: OUTPUT
+    ' ============================
+    With Me.Controls.Add("Forms.Label.1", "lblOut")
+        .Caption = "4. Output Cell:": .Left = MARGIN: .Top = currentTop + 3: .Width = LBL_W: .Font.Bold = True
+    End With
     Set refOutput = Me.Controls.Add("RefEdit.Ctrl", "refOutput")
     With refOutput
-        .Left = MARGIN + LBL_W
-        .Top = currentTop
-        .Width = INPUT_W
-        .Height = CTRL_H
+        .Left = MARGIN + LBL_W: .Top = currentTop: .Width = INPUT_W: .Height = CTRL_H
     End With
-    
     currentTop = currentTop + 35
     
     ' ============================
     ' SECTION 4: ACTION
     ' ============================
-    
     Set btnRun = Me.Controls.Add("Forms.CommandButton.1", "btnRun")
     With btnRun
-        .Caption = "Run Comparison"
-        .Left = Me.InsideWidth - 220
-        .Top = currentTop
-        .Width = 120
-        .Height = 30
-        .Font.Bold = True
-        .Enabled = False
+        .Caption = "Run Comparison": .Left = Me.InsideWidth - 220: .Top = currentTop: .Width = 120: .Height = 30: .Font.Bold = True: .Enabled = False
     End With
-    
     Set btnClose = Me.Controls.Add("Forms.CommandButton.1", "btnClose")
     With btnClose
-        .Caption = "Close"
-        .Left = Me.InsideWidth - 90
-        .Top = currentTop
-        .Width = 80
-        .Height = 30
+        .Caption = "Close": .Left = Me.InsideWidth - 90: .Top = currentTop: .Width = 80: .Height = 30
     End With
     
     Me.Height = currentTop + 70
@@ -245,7 +228,7 @@ Private Sub btnValidate_Click()
     Set rng2 = Range(refRange2.Text)
     On Error GoTo 0
     
-    If rng1 Is Nothing Or rng2 Is Nothing Then MsgBox "Invalid input ranges.", vbCritical: Exit Sub
+    If rng1 Is Nothing Or rng2 Is Nothing Then MsgBox "Invalid ranges.", vbCritical: Exit Sub
     If rng1.Columns.Count <> rng2.Columns.Count Then MsgBox "Column count mismatch.", vbCritical: Exit Sub
     
     headers1 = rng1.Rows(1).Value
@@ -264,6 +247,7 @@ Private Sub btnValidate_Click()
     For i = 1 To UBound(headers1, 2)
         lstColumns.AddItem headers1(1, i)
         lstColumns.List(i - 1, 1) = "COMPARE"
+        lstColumns.List(i - 1, 2) = "General"
     Next i
 End Sub
 
@@ -292,51 +276,59 @@ Private Sub btnSetIgnore_Click()
     UpdateColumnStatus "IGNORE"
 End Sub
 
-' --- RUN HANDLER ---
-' --- RUN HANDLER (UPDATED) ---
-Private Sub btnRun_Click()
-    Dim rngA As Range
-    Dim rngB As Range
-    Dim outputRng As Range
-    
-    ' Parameter Strings
-    Dim strIndex As String
-    Dim strIgnore As String
-    Dim strRef As String
-    
-    ' Function Arguments
-    Dim arrIndex As Variant
-    Dim arrIgnore As Variant
-    Dim arrRef As Variant
-    Dim bVlookupOrder As Boolean
-    
+' --- FORMAT HANDLER ---
+Private Sub btnSetFormat_Click()
+    Dim strFormat As String
     Dim i As Long
-    Dim status As String
-    Dim colName As String
-    Dim hasRangeBPrio As Boolean
     
-    ' 1. Validate Output Range
+    strFormat = InputBox("Enter Excel Number Format string:" & vbCrLf & "e.g., 0.00, $#,##0.00, 0%", "Set Column Format", "0.00")
+    If StrPtr(strFormat) = 0 Then Exit Sub
+    If strFormat = "" Then strFormat = "General"
+    
+    For i = 0 To lstColumns.listCount - 1
+        If lstColumns.Selected(i) Then
+            lstColumns.List(i, 2) = strFormat
+            lstColumns.Selected(i) = False
+        End If
+    Next i
+End Sub
+
+' --- RUN HANDLER (MAJOR UPDATE) ---
+' Updated to support Optional arguments and Reference Directions Dictionary
+Private Sub btnRun_Click()
+    Dim rngA As Range, rngB As Range, outputRng As Range
+    Dim strIndex As String, strIgnore As String, strRef As String
+    
+    ' Arrays to pass to function
+    Dim arrIndex As Variant, arrIgnore As Variant, arrRef As Variant
+    
+    ' Dictionary for Reference Directions (NEW)
+    ' Key = Column Name, Value = Boolean (True=Table2, False=Table1)
+    Dim dictRefDirs As Object
+    Set dictRefDirs = CreateObject("Scripting.Dictionary")
+    
+    Dim finalRefDirs As Variant
+    
+    Dim i As Long, status As String, colName As String, colFmt As String
+    Dim dictFormats As Object: Set dictFormats = CreateObject("Scripting.Dictionary")
+    
     On Error Resume Next
     Set outputRng = Range(refOutput.Text)
     Set rngA = Range(refRange1.Text)
     Set rngB = Range(refRange2.Text)
     On Error GoTo 0
     
-    If outputRng Is Nothing Then
-        MsgBox "Please select a valid Output Cell.", vbExclamation
-        refOutput.SetFocus
-        Exit Sub
-    End If
-    
-    ' Ensure we only use the top-left cell for output
+    If outputRng Is Nothing Then MsgBox "Select valid output cell.", vbExclamation: Exit Sub
     Set outputRng = outputRng.Cells(1, 1)
     
-    ' 2. Loop through ListBox to classify columns
-    hasRangeBPrio = False ' Default to False (Range A priority)
-    
+    ' --- LOOP THROUGH LISTBOX TO BUILD CONFIG ---
     For i = 0 To lstColumns.listCount - 1
         colName = lstColumns.List(i, 0)
         status = lstColumns.List(i, 1)
+        colFmt = lstColumns.List(i, 2)
+        
+        ' Store format for later
+        If Len(colFmt) > 0 And LCase(colFmt) <> "general" Then dictFormats.Item(colName) = colFmt
         
         Select Case status
             Case "INDEX"
@@ -347,78 +339,92 @@ Private Sub btnRun_Click()
                 
             Case "REF: Range A"
                 strRef = strRef & colName & ","
-                ' Range A priority is default, so bVlookupOrder remains False (or unchanged)
+                ' Add to Direction Dictionary: False = Prioritize Table 1
+                dictRefDirs.Item(colName) = False
                 
             Case "REF: Range B"
                 strRef = strRef & colName & ","
-                ' User explicitly asked for Range B value.
-                ' Note: Your function CompareExcelRanges takes a single Boolean for ALL ref columns.
-                ' If ANY column requires Range B, we set the global flag to True.
-                hasRangeBPrio = True
-                
-            ' Case "COMPARE" is implicit (columns not in Index/Ignore/Ref are compared)
+                ' Add to Direction Dictionary: True = Prioritize Table 2
+                dictRefDirs.Item(colName) = True
         End Select
     Next i
     
-    ' 3. Convert Strings to Arrays (Required by your function)
-    ' We use a helper function to ensure empty strings become Empty Arrays, not Array("") containing an empty string.
+    ' Convert CSV strings to Arrays
     arrIndex = StringToArray(strIndex)
     arrIgnore = StringToArray(strIgnore)
     arrRef = StringToArray(strRef)
     
-    ' Set the boolean order
-    bVlookupOrder = hasRangeBPrio
-    
-    ' Check mandatory Index
-    If IsEmpty(arrIndex) Then
-        MsgBox "Please select at least one INDEX column.", vbExclamation
-        Exit Sub
+    If dictRefDirs.Count > 0 Then
+        Set finalRefDirs = dictRefDirs
+    Else
+        finalRefDirs = Empty
     End If
     
-    ' 4. Call the Function
+    ' Check required inputs
+    If IsEmpty(arrIndex) Then MsgBox "Select at least one INDEX column.", vbExclamation: Exit Sub
+    If UBound(arrIndex) = -1 Then MsgBox "Select at least one INDEX column.", vbExclamation: Exit Sub ' Double check for empty array
+    
+    ' --- CALL MAIN FUNCTION (UPDATED SIGNATURE) ---
+    ' Signature: rng1, rng2, indexCols, [ignoreCols], [referenceCols], [referenceColDirections]
     Dim resultData As Variant
+    resultData = mod_funcs.CompareExcelRanges( _
+        rngA, _
+        rngB, _
+        arrIndex, _
+        arrIgnore, _
+        arrRef, _
+        finalRefDirs _
+    )
     
-    ' Assuming CompareExcelRanges is in a Standard Module (e.g., mod_funcs)
-    ' If it's in the same form code (not recommended), call it directly.
-    ' Ideally, call it from the module:
-    resultData = mod_funcs.CompareExcelRanges(rngA, rngB, arrIndex, arrIgnore, arrRef, bVlookupOrder)
-    
-    ' 5. Output the Result
+    ' --- OUTPUT RESULTS ---
     If IsArray(resultData) Then
         Dim rCount As Long, cCount As Long
         rCount = UBound(resultData, 1)
         cCount = UBound(resultData, 2)
         
-        ' Check if function returned an Error Array (1D inner array check)
-        ' Your function returns Array(Array("Error...")) on failure.
-        ' A standard check: if row 1, col 1 starts with "Error"
+        ' Check for Error in first cell
         If InStr(1, CStr(resultData(1, 1)), "Error", vbTextCompare) > 0 Then
-            MsgBox "Comparison Function Error: " & vbCrLf & resultData(1, 1), vbCritical
-            Exit Sub
+            MsgBox "Error: " & resultData(1, 1), vbCritical: Exit Sub
         End If
         
-        ' Write to Excel
-        Dim wsOut As Worksheet
-        Set wsOut = outputRng.Worksheet
-        wsOut.Activate
-        
-        ' Clear previous data area (Optional, be careful)
-        ' outputRng.CurrentRegion.ClearContents
-        
-        ' Dump Array
+        outputRng.Worksheet.Activate
         outputRng.Resize(rCount, cCount).Value = resultData
+        outputRng.Resize(1, cCount).Font.Bold = True
         
-        ' Styling (Optional)
-        outputRng.Resize(1, cCount).Font.Bold = True ' Header
-        outputRng.Resize(rCount, cCount).EntireColumn.AutoFit
+        ' APPLY FORMATTING
+        If dictFormats.Count > 0 And rCount > 2 Then
+            Dim headerRng As Range, cell As Range
+            Set headerRng = outputRng.Offset(1, 0).Resize(1, cCount)
+            For Each cell In headerRng.Cells
+                ' Check if the column name exists in our format dictionary
+                ' Note: The output header might have suffixes like "_T1", "_Diff", so check base name match if needed.
+                ' However, your function puts exact base names in Row 2 for Index/Ref columns.
+                ' For Comparison columns (T1/T2/Diff), you might want to format T1 and T2?
+                
+                ' Simple Exact Match logic for Index/Ref:
+                If dictFormats.Exists(cell.Value) Then
+                    cell.Offset(1, 0).Resize(rCount - 2, 1).NumberFormat = dictFormats(cell.Value)
+                End If
+                
+                ' Logic for T1/T2/Diff suffixes:
+                ' If the header ends in _T1, _T2, or _Diff, check the base name
+                Dim baseName As String
+                baseName = cell.Value
+                If InStr(baseName, "_T1") > 0 Then baseName = Replace(baseName, "_T1", "")
+                If InStr(baseName, "_T2") > 0 Then baseName = Replace(baseName, "_T2", "")
+                If InStr(baseName, "_Diff") > 0 Then baseName = Replace(baseName, "_Diff", "")
+                
+                If dictFormats.Exists(baseName) Then
+                     cell.Offset(1, 0).Resize(rCount - 2, 1).NumberFormat = dictFormats(baseName)
+                End If
+            Next cell
+        End If
         
-        MsgBox "Comparison Complete! Results generated at " & outputRng.Address(External:=False), vbInformation
-        
+        MsgBox "Comparison Complete!", vbInformation
         Unload Me
     Else
-        MsgBox "The function did not return a valid array.", vbCritical
+        MsgBox "Function failed to return array.", vbCritical
     End If
-    
 End Sub
 
 Private Sub btnClose_Click()
@@ -440,26 +446,15 @@ Private Sub ToggleInputs(st As Boolean)
     refRange1.Enabled = st: refRange2.Enabled = st: txtName1.Enabled = st: txtName2.Enabled = st: btnValidate.Enabled = st
 End Sub
 
-Private Function StripComma(s As String) As String
-    If Len(s) > 0 Then If Right(s, 1) = "," Then StripComma = Left(s, Len(s) - 1) Else StripComma = s
-End Function
-
-' --- Helper to convert Comma String to Array ---
 Private Function StringToArray(ByVal strList As String) As Variant
-    ' Removes trailing comma and returns an Array of strings.
-    ' Returns Empty if string is blank.
-    
+    ' UPDATED: Returns "Empty" (Variant) instead of an empty array if string is blank.
+    ' This ensures IsArray() returns False in the receiving function.
     If Len(strList) = 0 Then
-        StringToArray = Array() ' Return empty array
+        StringToArray = Empty
         Exit Function
     End If
     
-    ' Remove trailing comma
-    If Right(strList, 1) = "," Then
-        strList = Left(strList, Len(strList) - 1)
-    End If
-    
-    ' Split into array
+    If Right(strList, 1) = "," Then strList = Left(strList, Len(strList) - 1)
     StringToArray = Split(strList, ",")
 End Function
 
