@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_compare_setup"
-Attribute VB_Base = "0{B3F5802D-1A30-4225-99D9-61EE14947A08}{06A78BAF-63B8-4ACD-986A-41632A8058BF}"
+Attribute VB_Base = "0{41411CF7-1E14-4D56-92C3-DE53074F25E8}{0B8DB144-FC7B-4DE5-8FCF-DEE9771BCABE}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -8,7 +8,7 @@ Attribute VB_TemplateDerived = False
 Attribute VB_Customizable = False
 ' UserForm: frm_compare_setup
 ' Purpose: Complete Wizard with Range Selection, Column Roles, Ordering, Formatting, and Execution.
-' UPDATED: Adapted for the new CompareExcelRanges signature with Optional arguments and Dictionary-based Reference Directions.
+' UPDATED: Added Headers for ListBox and maintained previous fixes.
 Option Explicit
 
 ' --- 1. Event Handler Declarations ---
@@ -125,12 +125,54 @@ Private Sub UserForm_Initialize()
         .Enabled = False
     End With
     
-    ' ListBox (3 Columns: Name, Role, Format)
+    ' --- [NEW] HEADER LABELS ---
+    ' Define widths here to ensure labels match listbox columns
+    Dim colW1 As Double: colW1 = 150
+    Dim colW2 As Double: colW2 = 90
+    Dim colW3 As Double: colW3 = 80
+    
+    ' Header 1: Column Name
+    With frameConfig.Controls.Add("Forms.Label.1", "lblHdr1")
+        .Caption = "Column Name"
+        .Left = 10
+        .Top = 20
+        .Width = colW1
+        .Font.Bold = True
+        .Font.Size = 9
+        .ForeColor = &H8000000D ' System Highlight Color
+    End With
+    
+    ' Header 2: Role
+    With frameConfig.Controls.Add("Forms.Label.1", "lblHdr2")
+        .Caption = "Role / Status"
+        .Left = 10 + colW1
+        .Top = 20
+        .Width = colW2
+        .Font.Bold = True
+        .Font.Size = 9
+        .ForeColor = &H8000000D
+    End With
+    
+    ' Header 3: Format
+    With frameConfig.Controls.Add("Forms.Label.1", "lblHdr3")
+        .Caption = "Format"
+        .Left = 10 + colW1 + colW2
+        .Top = 20
+        .Width = colW3
+        .Font.Bold = True
+        .Font.Size = 9
+        .ForeColor = &H8000000D
+    End With
+    
+    ' --- UPDATED LISTBOX POSITION ---
     Set lstColumns = frameConfig.Controls.Add("Forms.ListBox.1", "lstColumns")
     With lstColumns
-        .Left = 10: .Top = 20: .Width = 340: .Height = 250
+        .Left = 10
+        .Top = 35 ' Moved down (was 20) to make room for headers
+        .Width = 340
+        .Height = 235 ' Slightly reduced height to fit in frame
         .ColumnCount = 3
-        .ColumnWidths = "150;90;80"
+        .ColumnWidths = CStr(colW1) & ";" & CStr(colW2) & ";" & CStr(colW3)
         .MultiSelect = fmMultiSelectExtended
     End With
     
@@ -247,7 +289,7 @@ Private Sub btnValidate_Click()
     For i = 1 To UBound(headers1, 2)
         lstColumns.AddItem headers1(1, i)
         lstColumns.List(i - 1, 1) = "COMPARE"
-        lstColumns.List(i - 1, 2) = "General"
+        lstColumns.List(i - 1, 2) = "#,##0_-;[Color3]-#,##0_-;""-""_-;@"
     Next i
 End Sub
 
@@ -293,8 +335,7 @@ Private Sub btnSetFormat_Click()
     Next i
 End Sub
 
-' --- RUN HANDLER (MAJOR UPDATE) ---
-' Updated to support Optional arguments and Reference Directions Dictionary
+' --- RUN HANDLER ---
 Private Sub btnRun_Click()
     Dim rngA As Range, rngB As Range, outputRng As Range
     Dim strIndex As String, strIgnore As String, strRef As String
@@ -302,8 +343,7 @@ Private Sub btnRun_Click()
     ' Arrays to pass to function
     Dim arrIndex As Variant, arrIgnore As Variant, arrRef As Variant
     
-    ' Dictionary for Reference Directions (NEW)
-    ' Key = Column Name, Value = Boolean (True=Table2, False=Table1)
+    ' Dictionary for Reference Directions
     Dim dictRefDirs As Object
     Set dictRefDirs = CreateObject("Scripting.Dictionary")
     
@@ -339,12 +379,10 @@ Private Sub btnRun_Click()
                 
             Case "REF: Range A"
                 strRef = strRef & colName & ","
-                ' Add to Direction Dictionary: False = Prioritize Table 1
                 dictRefDirs.Item(colName) = False
                 
             Case "REF: Range B"
                 strRef = strRef & colName & ","
-                ' Add to Direction Dictionary: True = Prioritize Table 2
                 dictRefDirs.Item(colName) = True
         End Select
     Next i
@@ -362,10 +400,9 @@ Private Sub btnRun_Click()
     
     ' Check required inputs
     If IsEmpty(arrIndex) Then MsgBox "Select at least one INDEX column.", vbExclamation: Exit Sub
-    If UBound(arrIndex) = -1 Then MsgBox "Select at least one INDEX column.", vbExclamation: Exit Sub ' Double check for empty array
+    If UBound(arrIndex) = -1 Then MsgBox "Select at least one INDEX column.", vbExclamation: Exit Sub
     
-    ' --- CALL MAIN FUNCTION (UPDATED SIGNATURE) ---
-    ' Signature: rng1, rng2, indexCols, [ignoreCols], [referenceCols], [referenceColDirections]
+    ' --- CALL MAIN FUNCTION ---
     Dim resultData As Variant
     resultData = mod_funcs.CompareExcelRanges( _
         rngA, _
@@ -382,7 +419,6 @@ Private Sub btnRun_Click()
         rCount = UBound(resultData, 1)
         cCount = UBound(resultData, 2)
         
-        ' Check for Error in first cell
         If InStr(1, CStr(resultData(1, 1)), "Error", vbTextCompare) > 0 Then
             MsgBox "Error: " & resultData(1, 1), vbCritical: Exit Sub
         End If
@@ -396,18 +432,10 @@ Private Sub btnRun_Click()
             Dim headerRng As Range, cell As Range
             Set headerRng = outputRng.Offset(1, 0).Resize(1, cCount)
             For Each cell In headerRng.Cells
-                ' Check if the column name exists in our format dictionary
-                ' Note: The output header might have suffixes like "_T1", "_Diff", so check base name match if needed.
-                ' However, your function puts exact base names in Row 2 for Index/Ref columns.
-                ' For Comparison columns (T1/T2/Diff), you might want to format T1 and T2?
-                
-                ' Simple Exact Match logic for Index/Ref:
                 If dictFormats.Exists(cell.Value) Then
                     cell.Offset(1, 0).Resize(rCount - 2, 1).NumberFormat = dictFormats(cell.Value)
                 End If
                 
-                ' Logic for T1/T2/Diff suffixes:
-                ' If the header ends in _T1, _T2, or _Diff, check the base name
                 Dim baseName As String
                 baseName = cell.Value
                 If InStr(baseName, "_T1") > 0 Then baseName = Replace(baseName, "_T1", "")
@@ -438,6 +466,18 @@ Private Sub UpdateColumnStatus(newStatus As String)
         If lstColumns.Selected(i) Then
             lstColumns.List(i, 1) = newStatus
             lstColumns.Selected(i) = False
+            Select Case newStatus
+                Case "INDEX"
+                    lstColumns.List(i, 2) = "@"
+                Case "REF: Range A"
+                    lstColumns.List(i, 2) = "@"
+                Case "REF: Range B"
+                    lstColumns.List(i, 2) = "@"
+                Case "COMPARE"
+                    lstColumns.List(i, 2) = "#,##0_-;[Color3]-#,##0_-;""-""_-;@"
+                    
+            End Select
+                
         End If
     Next i
 End Sub
@@ -447,8 +487,6 @@ Private Sub ToggleInputs(st As Boolean)
 End Sub
 
 Private Function StringToArray(ByVal strList As String) As Variant
-    ' UPDATED: Returns "Empty" (Variant) instead of an empty array if string is blank.
-    ' This ensures IsArray() returns False in the receiving function.
     If Len(strList) = 0 Then
         StringToArray = Empty
         Exit Function

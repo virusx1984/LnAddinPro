@@ -24,3 +24,15 @@ Public Sub LNS_ShowTimeSeriesForm(control As IRibbonControl)
     ' Display the form
     frm_gen_time_series.Show
 End Sub
+
+' Purpose: Launches the Compare Setup UserForm (frm_compare_setup).
+' The control parameter is REQUIRED by the Ribbon's onAction mechanism.
+Public Sub LNS_ShowCompareForm(control As IRibbonControl)
+    ' LNS: LnAddinPro Sub - Shows the UserForm for comparing data ranges.
+    
+    ' Load the form into memory
+    Load frm_compare_setup
+    
+    ' Display the form
+    frm_compare_setup.Show
+End Sub

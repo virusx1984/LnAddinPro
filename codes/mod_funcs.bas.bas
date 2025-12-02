@@ -9,11 +9,9 @@ Attribute VB_Name = "mod_funcs"
 ' @param indexCols (Variant): REQUIRED. A 1D Array of column names (Strings) acting as unique keys.
 ' @param ignoreCols (Variant): OPTIONAL. A 1D Array of column names to ignore. Defaults to Empty.
 ' @param referenceCols (Variant): OPTIONAL. A 1D Array of reference column names. Defaults to Empty.
-' @param referenceColDirections (Variant): OPTIONAL. Determines the fill priority for Reference columns.
-'                                          Defaults to True (Prioritize Table 2) if omitted.
-'                                          - Boolean (True): All Ref cols prioritize Table 2, then Table 1.
-'                                          - Boolean (False): All Ref cols prioritize Table 1, then Table 2.
+' @param referenceColDirections (Variant): OPTIONAL. A Dictionary determining fill priority for Ref cols.
 '                                          - Dictionary: Key=ColName, Value=Boolean.
+'                                          - Empty/Missing: Defaults to True (Prioritize Table 2).
 '
 ' @return (Variant): A two-dimensional array containing the comparison results.
 Public Function CompareExcelRanges( _
@@ -52,8 +50,8 @@ Public Function CompareExcelRanges( _
     Dim colName As Variant
     Dim arrTemp As Variant
     
-    ' Direction Logic Variable
-    Dim actualRefDirs As Variant
+    ' Direction Logic Variable (Dictionary Object or Nothing)
+    Dim actualRefDirs As Object
     
     ' Initialization
     Set dictHeaders = CreateObject("Scripting.Dictionary")
@@ -64,7 +62,7 @@ Public Function CompareExcelRanges( _
     Set refColIndexes = CreateObject("Scripting.Dictionary")
     Set resultCollection = New Collection
     
-'    On Error GoTo ErrorHandler
+    On Error GoTo ErrorHandler
     
     ' --- 1. Input Validation and Handling Optionals ---
     
@@ -103,13 +101,12 @@ CheckIgnore:
     End If
 
     ' 1d. Handle referenceColDirections (Optional)
-    ' Default logic: If missing, treat as True (Prioritize Table 2)
-    If IsMissing(referenceColDirections) Then
-        actualRefDirs = True
-    ElseIf IsEmpty(referenceColDirections) Then
-        actualRefDirs = True
-    Else
-        actualRefDirs = referenceColDirections
+    Set actualRefDirs = Nothing
+    
+    If Not IsMissing(referenceColDirections) Then
+        If IsObject(referenceColDirections) Then
+            Set actualRefDirs = referenceColDirections
+        End If
     End If
 
     ' --- 2. Initial Checks (Column Count and Header Matching) ---
@@ -248,28 +245,22 @@ CheckIgnore:
             End If
         Next
         
-        ' 2c. Reference Columns (Using actualRefDirs)
+        ' 2c. Reference Columns
         For Each compHeader In refColIndexes.Keys
             i = refColIndexes.Item(compHeader)
             Dim refVal As Variant: refVal = ""
             Dim refT2 As Variant: If isT2Present Then refT2 = valuesT2(i) Else refT2 = Empty
             Dim refT1 As Variant: If isT1Present Then refT1 = valuesT1(i) Else refT1 = Empty
             
-            ' Determine Direction (Priority)
             Dim prioritizeT2 As Boolean
-            prioritizeT2 = True ' Default
+            prioritizeT2 = True
             
-            If VarType(actualRefDirs) = vbBoolean Then
-                prioritizeT2 = actualRefDirs
-            ElseIf IsObject(actualRefDirs) Then
-                If TypeName(actualRefDirs) = "Dictionary" Then
-                    If actualRefDirs.Exists(compHeader) Then
-                        prioritizeT2 = actualRefDirs(compHeader)
-                    End If
+            If Not actualRefDirs Is Nothing Then
+                If actualRefDirs.Exists(compHeader) Then
+                    prioritizeT2 = CBool(actualRefDirs(compHeader))
                 End If
             End If
             
-            ' Apply Logic
             If prioritizeT2 Then
                 If Not IsEmpty(refT2) And refT2 <> "" Then refVal = refT2
                 If (IsEmpty(refVal) Or refVal = "") And (Not IsEmpty(refT1) And refT1 <> "") Then refVal = refT1
@@ -281,24 +272,45 @@ CheckIgnore:
             rowResult.Add compHeader & "_Ref", refVal
         Next
         
-        ' 2d. Comparison Columns
+        ' 2d. Comparison Columns (UPDATED: Fill Zero for missing rows)
         Dim t1Values As Object: Set t1Values = CreateObject("Scripting.Dictionary")
         Dim t2Values As Object: Set t2Values = CreateObject("Scripting.Dictionary")
         Dim diffValues As Object: Set diffValues = CreateObject("Scripting.Dictionary")
         
         For Each compHeader In compareColIndexes.Keys
             i = compareColIndexes.Item(compHeader)
-            Dim val1 As Variant: If isT1Present Then val1 = valuesT1(i) Else val1 = ""
-            Dim val2 As Variant: If isT2Present Then val2 = valuesT2(i) Else val2 = ""
+            
+            ' --- MODIFIED LOGIC START ---
+            ' If the table is present, use its value. If NOT present (missing row), fill with 0.
+            Dim val1 As Variant
+            If isT1Present Then
+                val1 = valuesT1(i)
+                ' Optional: If you also want empty cells in existing rows to be treated as 0, uncomment below:
+                ' If IsEmpty(val1) Or CStr(val1) = "" Then val1 = 0
+            Else
+                val1 = 0
+            End If
+            
+            Dim val2 As Variant
+            If isT2Present Then
+                val2 = valuesT2(i)
+                ' Optional: If you also want empty cells in existing rows to be treated as 0, uncomment below:
+                ' If IsEmpty(val2) Or CStr(val2) = "" Then val2 = 0
+            Else
+                val2 = 0
+            End If
+            
             Dim diffVal As Variant: diffVal = ""
             
+            ' Calculate Difference
+            ' Since missing rows are now 0, we can use simple subtraction as long as both are numeric.
             If IsNumeric(val1) And IsNumeric(val2) Then
                 diffVal = CDbl(val2) - CDbl(val1)
-            ElseIf isT1Present And Not isT2Present Then
-                If IsNumeric(val1) Then diffVal = 0 - CDbl(val1)
-            ElseIf isT2Present And Not isT1Present Then
-                If IsNumeric(val2) Then diffVal = CDbl(val2) - 0
+            Else
+                ' If one is text and the other is 0 (or text), we cannot calculate a numeric difference.
+                ' Leaving diffVal as empty string ""
             End If
+            ' --- MODIFIED LOGIC END ---
             
             t1Values.Add compHeader, val1
             t2Values.Add compHeader, val2
@@ -367,8 +379,8 @@ ErrorHandler:
     CompareExcelRanges = Array(Array("Error: Unexpected runtime error. Number: " & Err.Number & ", Description: " & Err.Description))
 End Function
 
+' --- PopulateDictionary Helper (Remains unchanged) ---
 Private Sub PopulateDictionary(ByVal rng As Range, ByVal indexCols As Object, ByRef targetDict As Object)
-    ' (This Sub remains unchanged)
     Dim dataRange As Range
     Dim dataArray As Variant
     Dim r As Long, c As Long

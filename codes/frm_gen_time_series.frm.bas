@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_gen_time_series"
-Attribute VB_Base = "0{AEB89155-1F8D-4F15-9B8E-ECDED1A26C80}{A70643DD-06CC-4664-8CA6-3CC709CD773B}"
+Attribute VB_Base = "0{69543372-06DF-43B1-B5E8-2FB2BD07512A}{F549F734-08BD-41BF-988B-452B02319D02}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -9,26 +9,23 @@ Attribute VB_Customizable = False
 Option Explicit
 
 ' Declare CommandButton variables using WithEvents to capture the Click event
-' for dynamically created controls. This is essential for event routing.
 Public WithEvents cmdExecute As MSForms.CommandButton
 Attribute cmdExecute.VB_VarHelpID = -1
 Public WithEvents cmdClose As MSForms.CommandButton
 Attribute cmdClose.VB_VarHelpID = -1
 
-' Declare input controls as Public Object for access within the Click event handler.
-' Using Object ensures compatibility, especially for the RefEdit control.
+' Declare input controls as Public Object
 Public txtIntervalType As Object
 Public txtStartYear As Object
 Public ckbIncludeAnnualTotal As Object
 Public refOutputCell As Object
 
-
 Private Sub UserForm_Initialize()
     
     ' --- 1. Form and Layout Setup ---
     Me.Caption = "Generate Time Series"
+    ' Set width first. Note: We will set Height at the very end.
     Me.Width = 320
-    Me.Height = 240
     
     ' Layout Constants
     Const LABEL_WIDTH As Long = 100
@@ -36,16 +33,13 @@ Private Sub UserForm_Initialize()
     Const TOP_MARGIN As Long = 10
     Const SPACING As Long = 10
     Const CONTROL_HEIGHT As Long = 20
-    Dim currentTop As Long: currentTop = TOP_MARGIN
     
-    ' Calculated left position for input controls
+    Dim currentTop As Long: currentTop = TOP_MARGIN
     Dim controlLeft As Long: controlLeft = SPACING + LABEL_WIDTH + 5
 
     ' --- 2. Input Control Setup ---
 
-    ' 2a. Interval Type (Label and TextBox)
-    
-    ' Label: lblIntervalType
+    ' 2a. Interval Type
     With Me.Controls.Add("Forms.Label.1", "lblIntervalType", True)
         .Caption = "1. Interval Combo:"
         .Width = LABEL_WIDTH
@@ -54,7 +48,6 @@ Private Sub UserForm_Initialize()
         .Top = currentTop + 3
     End With
     
-    ' Control: txtIntervalType (Assigned to Public variable)
     Set txtIntervalType = Me.Controls.Add("Forms.TextBox.1", "txtIntervalType", True)
     With txtIntervalType
         .Left = controlLeft
@@ -65,9 +58,7 @@ Private Sub UserForm_Initialize()
     End With
     currentTop = currentTop + CONTROL_HEIGHT + SPACING
 
-    ' 2b. Start Year (Label and TextBox)
-    
-    ' Label: lblStartYear
+    ' 2b. Start Year
     With Me.Controls.Add("Forms.Label.1", "lblStartYear", True)
         .Caption = "2. Start Year (YYYY):"
         .Width = LABEL_WIDTH
@@ -76,7 +67,6 @@ Private Sub UserForm_Initialize()
         .Top = currentTop + 3
     End With
     
-    ' Control: txtStartYear
     Set txtStartYear = Me.Controls.Add("Forms.TextBox.1", "txtStartYear", True)
     With txtStartYear
         .Left = controlLeft
@@ -87,9 +77,7 @@ Private Sub UserForm_Initialize()
     End With
     currentTop = currentTop + CONTROL_HEIGHT + SPACING
 
-    ' 2c. Include Annual Total (CheckBox)
-    
-    ' Control: ckbIncludeAnnualTotal
+    ' 2c. Include Annual Total
     Set ckbIncludeAnnualTotal = Me.Controls.Add("Forms.CheckBox.1", "ckbIncludeAnnualTotal", True)
     With ckbIncludeAnnualTotal
         .Left = controlLeft
@@ -101,9 +89,7 @@ Private Sub UserForm_Initialize()
     End With
     currentTop = currentTop + CONTROL_HEIGHT + SPACING
 
-    ' 2d. Output Cell (Label and RefEdit)
-    
-    ' Label: lblOutputCell
+    ' 2d. Output Cell
     With Me.Controls.Add("Forms.Label.1", "lblOutputCell", True)
         .Caption = "3. Output Cell:"
         .Width = LABEL_WIDTH
@@ -112,54 +98,72 @@ Private Sub UserForm_Initialize()
         .Top = currentTop + 3
     End With
     
-    ' Control: refOutputCell (Using the correct RefEdit ProgID and assigning to Public variable)
     Set refOutputCell = Me.Controls.Add("RefEdit.Ctrl", "refOutputCell", True)
     With refOutputCell
         .Left = controlLeft
         .Top = currentTop
         .Width = CONTROL_WIDTH
         .Height = CONTROL_HEIGHT
-        ' Set the RefEdit to the active cell initially
         If TypeName(Selection) = "Range" Then
             .Text = Selection.Address(External:=False)
         End If
     End With
-    currentTop = currentTop + CONTROL_HEIGHT + SPACING + 15 ' Extra space before buttons
+    
+    ' Add extra padding before the buttons
+    currentTop = currentTop + CONTROL_HEIGHT + 20
 
-    ' --- 3. Command Buttons (Bound via WithEvents) ---
+    ' --- 3. Command Buttons ---
     
     Const BUTTON_WIDTH As Long = 80
-    Dim buttonLeft As Long: buttonLeft = Me.Width - BUTTON_WIDTH - 70
+    Const BUTTON_HEIGHT As Long = 24
     
-    ' 3a. cmdExecute (Assigned to Public WithEvents cmdExecute variable)
+    ' Calculate Right Alignment for buttons
+    ' Me.InsideWidth ensures we calculate based on the usable area
+    Dim btnLeftExecute As Long
+    btnLeftExecute = Me.InsideWidth - BUTTON_WIDTH - SPACING
+    
+    ' 3a. cmdExecute
     Set cmdExecute = Me.Controls.Add("Forms.CommandButton.1", "cmdExecute", True)
     With cmdExecute
-        .Left = buttonLeft
+        .Left = btnLeftExecute
         .Top = currentTop
         .Width = BUTTON_WIDTH
-        .Height = 25
+        .Height = BUTTON_HEIGHT
         .Caption = "Execute"
+        .Default = True ' Allows pressing Enter key
     End With
-    currentTop = currentTop + 25 + SPACING
+    
+    ' Move currentTop down for the next button
+    currentTop = currentTop + BUTTON_HEIGHT + SPACING
 
-    ' 3b. cmdClose (Assigned to Public WithEvents cmdClose variable)
+    ' 3b. cmdClose
     Set cmdClose = Me.Controls.Add("Forms.CommandButton.1", "cmdClose", True)
     With cmdClose
-        .Left = buttonLeft
+        .Left = btnLeftExecute
         .Top = currentTop
         .Width = BUTTON_WIDTH
-        .Height = 25
+        .Height = BUTTON_HEIGHT
         .Caption = "Close"
+        .Cancel = True ' Allows pressing Esc key
     End With
-    currentTop = currentTop + 25
     
-    ' --- 4. Final Form Resize ---
-    Me.Height = currentTop + TOP_MARGIN
+    ' Increment currentTop to include the last button's height
+    currentTop = currentTop + BUTTON_HEIGHT
+
+    ' --- 4. Final Form Resize (CORRECTED) ---
+    
+    Dim formChromeHeight As Single
+    
+    ' Calculate the height of the Title Bar + Borders
+    ' We do this by subtracting the usable area (InsideHeight) from the total area (Height)
+    formChromeHeight = Me.Height - Me.InsideHeight
+    
+    ' Now set the total Height.
+    ' Logic: Total Height = (Where the last control ends) + (Bottom Margin) + (TitleBar/Borders)
+    Me.Height = currentTop + TOP_MARGIN + formChromeHeight
 
 End Sub
 
-
-' Event handler triggered by the cmdExecute variable (declared WithEvents).
 Private Sub cmdExecute_Click()
     Dim intervalType As String
     Dim includeTotal As Boolean
@@ -169,28 +173,23 @@ Private Sub cmdExecute_Click()
     Dim seriesLength As Long
     Dim ws As Worksheet
     
-    ' 1. Validate and retrieve parameters (Accessing controls via their Public variable names)
-    
-    intervalType = Trim(txtIntervalType.Value) ' Using txtIntervalType variable
+    intervalType = Trim(txtIntervalType.Value)
     If intervalType = "" Then
         MsgBox "Please enter the Interval Type Combo (e.g., MMQHY).", vbExclamation, "Input Error"
         txtIntervalType.SetFocus
         Exit Sub
     End If
     
-    includeTotal = ckbIncludeAnnualTotal.Value ' Using ckbIncludeAnnualTotal variable
+    includeTotal = ckbIncludeAnnualTotal.Value
     
-    ' Validate Start Year input
-    If Not IsNumeric(txtStartYear.Value) Then ' Using txtStartYear variable
+    If Not IsNumeric(txtStartYear.Value) Then
         MsgBox "Please enter a valid Start Year.", vbExclamation, "Input Error"
         txtStartYear.SetFocus
         Exit Sub
     End If
     StartYear = CLng(txtStartYear.Value)
 
-    ' 2. Validate output cell
     On Error Resume Next
-    ' Accessing RefEdit control via its Public variable name
     Set outputRange = Application.Range(refOutputCell.Text)
     On Error GoTo 0
     
@@ -200,37 +199,23 @@ Private Sub cmdExecute_Click()
         Exit Sub
     End If
     
-    ' Use only the top-left cell of the selection
     Set outputRange = outputRange.Cells(1, 1)
     Set ws = outputRange.Worksheet
 
-    ' 3. Generate Time Series Data
-    ' Explicitly call the function from the mod_funcs module
+    ' Ensure mod_funcs exists in your project
     timeSeriesData = mod_funcs.GenerateTimeSeries(intervalType, includeTotal, StartYear)
     
-    ' 4. Output the results
     If IsArray(timeSeriesData) Then
-        ' Determine the number of elements (columns) to output
         seriesLength = UBound(timeSeriesData)
-        
-        ' Ensure the target sheet is active before writing (UX improvement)
         ws.Activate
-        
-        ' Output the 1D array horizontally to the resized range
         outputRange.Resize(1, seriesLength).Value = timeSeriesData
-        
-        MsgBox "Time series generated successfully! (" & seriesLength & " elements) to " & outputRange.Address(External:=False), vbInformation, "Success"
-        
-        ' Close the form after successful execution
+        MsgBox "Time series generated successfully!", vbInformation, "Success"
         Unload Me
     Else
-        MsgBox "Failed to generate time series or result is empty.", vbCritical, "Execution Error"
+        MsgBox "Failed to generate time series.", vbCritical, "Execution Error"
     End If
-    
 End Sub
 
-' Event handler triggered by the cmdClose variable (declared WithEvents).
 Private Sub cmdClose_Click()
-    ' Close the form without performing any action
     Unload Me
 End Sub
