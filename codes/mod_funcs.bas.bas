@@ -1,6 +1,153 @@
 Attribute VB_Name = "mod_funcs"
+' Purpose: Converts an Excel range into a compact, split-oriented JSON string format.
+'          The output contains separate arrays for headers, types, and data rows to optimize performance.
+'
+' @param rng (Range): REQUIRED. The source data range to convert.
+'                     - Row 1: Must contain unique Header names.
+'                     - Row 2+: Contains the Data values.
+' @param typeDict (Object): REQUIRED. A Scripting.Dictionary defining the column types.
+'                           - Key (String): Header name matching the range.
+'                           - Value (String): Type identifier ("cate"/"category" or "agg"/"aggregation").
+'                           - Behavior: Defaults to "aggregation" if missing.
+'                           - Constraint: At least one column MUST be defined as "category".
+' @param formatDict (Object): OPTIONAL. A Scripting.Dictionary defining number formats for specific columns.
+'                             - Key (String): Header name.
+'                             - Value (String): VBA Format string (e.g., "0.00", "$#,##0", "yyyy-mm-dd").
+'
+' @return (String): A JSON formatted string containing "columns", "col_types", and "data" keys.
+Public Function RangeToCompactJson( _
+    rng As Range, _
+    typeDict As Object, _
+    Optional formatDict As Object _
+) As String
+    
+    Dim dataArr As Variant
+    Dim r As Long, c As Long
+    Dim rowCount As Long, colCount As Long
+    
+    ' Buffers for string joining
+    Dim headerList() As String
+    Dim typeList() As String
+    Dim rowList() As String
+    Dim cellList() As String
+    
+    ' Performance Cache
+    Dim colFormats() As String
+    
+    Dim headerName As String
+    Dim dictValue As String
+    Dim finalType As String
+    Dim hasCategory As Boolean
+    Dim cellValue As Variant
+    Dim fmtStr As String
+    Dim formattedVal As String
+    
+    ' Load range data into memory array
+    dataArr = rng.Value2
+    rowCount = UBound(dataArr, 1)
+    colCount = UBound(dataArr, 2)
+    
+    ' Initialize arrays
+    ReDim headerList(1 To colCount)
+    ReDim typeList(1 To colCount)
+    ReDim colFormats(1 To colCount) ' Cache formats per column
+    
+    If rowCount > 1 Then
+        ReDim rowList(1 To rowCount - 1)
+    Else
+        RangeToCompactJson = "{}"
+        Exit Function
+    End If
+    
+    hasCategory = False
+    
+    ' --- Step 1: Process Headers, Types and Cache Formats ---
+    For c = 1 To colCount
+        headerName = CStr(dataArr(1, c))
+        headerList(c) = """" & EscapeJson(headerName) & """"
+        
+        ' 1. Determine Type
+        finalType = "aggregation"
+        If Not typeDict Is Nothing Then
+            If typeDict.Exists(headerName) Then
+                dictValue = LCase(typeDict(headerName))
+                If InStr(1, dictValue, "cate") > 0 Then
+                    finalType = "category"
+                    hasCategory = True
+                ElseIf InStr(1, dictValue, "agg") > 0 Then
+                    finalType = "aggregation"
+                End If
+            End If
+        End If
+        typeList(c) = """" & finalType & """"
+        
+        ' 2. Cache Format String (if exists)
+        colFormats(c) = ""
+        If Not formatDict Is Nothing Then
+            If formatDict.Exists(headerName) Then
+                colFormats(c) = formatDict(headerName)
+            End If
+        End If
+    Next c
+    
+    ' --- Validation ---
+    If Not hasCategory Then
+        Err.Raise vbObjectError + 513, "RangeToCompactJson", _
+            "Invalid Configuration: At least one column must be defined as 'category' (cate)."
+    End If
+    
+    ' --- Step 2: Process Data Rows ---
+    For r = 2 To rowCount
+        ReDim cellList(1 To colCount)
+        For c = 1 To colCount
+            cellValue = dataArr(r, c)
+            fmtStr = colFormats(c)
+            
+            ' Logic: Apply format if present, otherwise default handling
+            If fmtStr <> "" And Not IsError(cellValue) And Not IsEmpty(cellValue) Then
+                formattedVal = Format(cellValue, fmtStr)
+                
+                ' If formatted value looks like a pure number (no commas/symbols), treat as JSON Number
+                ' Otherwise treat as JSON String (e.g., "$1,000" or "2026-01-01")
+                If IsNumeric(formattedVal) And InStr(formattedVal, ",") = 0 And InStr(formattedVal, " ") = 0 Then
+                    cellList(c) = formattedVal
+                Else
+                    cellList(c) = """" & EscapeJson(formattedVal) & """"
+                End If
+            Else
+                ' Default Handling (No specific format requested)
+                If IsNumeric(cellValue) And Not IsEmpty(cellValue) Then
+                    cellList(c) = CStr(cellValue)
+                Else
+                    If IsError(cellValue) Then cellValue = "Error"
+                    If IsEmpty(cellValue) Then cellValue = ""
+                    cellList(c) = """" & EscapeJson(CStr(cellValue)) & """"
+                End If
+            End If
+        Next c
+        rowList(r - 1) = "    [" & Join(cellList, ", ") & "]"
+    Next r
+    
+    ' --- Step 3: Assemble Final JSON ---
+    Dim jsonParts(1 To 3) As String
+    jsonParts(1) = "  ""columns"": [" & Join(headerList, ", ") & "]"
+    jsonParts(2) = "  ""col_types"": [" & Join(typeList, ", ") & "]"
+    jsonParts(3) = "  ""data"": [" & vbCrLf & Join(rowList, "," & vbCrLf) & vbCrLf & "  ]"
+    
+    RangeToCompactJson = "{" & vbCrLf & Join(jsonParts, "," & vbCrLf) & vbCrLf & "}"
 
+End Function
 
+Private Function EscapeJson(s As String) As String
+    Dim temp As String
+    temp = Replace(s, "\", "\\")
+    temp = Replace(temp, """", "\""")
+    temp = Replace(temp, vbCrLf, "\n")
+    temp = Replace(temp, vbCr, "\r")
+    temp = Replace(temp, vbLf, "\n")
+    temp = Replace(temp, vbTab, "\t")
+    EscapeJson = temp
+End Function
 
 ' Purpose: Compares two Excel data ranges (Table 1 and Table 2) based on specified column categories.
 '

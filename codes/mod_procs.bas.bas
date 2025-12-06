@@ -1,4 +1,16 @@
 Attribute VB_Name = "mod_procs"
+' Purpose: Launches the JSON Export UserForm (frm_json_export).
+' The control parameter is REQUIRED by the Ribbon's onAction mechanism.
+Public Sub LNS_ShowJsonExportForm(control As IRibbonControl)
+    ' LNS: LnAddinPro Sub - Shows the UserForm for exporting range to JSON.
+    
+    ' Load the form into memory
+    Load frm_json_export
+    
+    ' Display the form
+    frm_json_export.Show
+End Sub
+
 
 ' Purpose: Launches the Data Melt UserForm (frm_melt).
 ' The control parameter is REQUIRED by the Ribbon's onAction mechanism.
