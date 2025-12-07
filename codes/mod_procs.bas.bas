@@ -1,4 +1,10 @@
 Attribute VB_Name = "mod_procs"
+' Purpose: Launches the About UserForm.
+Public Sub LNS_ShowAboutForm(control As IRibbonControl)
+    Load frm_about
+    frm_about.Show
+End Sub
+
 ' Purpose: Launch the UserForm
 Public Sub LNS_ShowCodeExportForm(control As IRibbonControl)
     Load frm_code_export
