@@ -1,4 +1,11 @@
 Attribute VB_Name = "mod_procs"
+' Purpose: Launch the UserForm
+Public Sub LNS_ShowCodeExportForm(control As IRibbonControl)
+    Load frm_code_export
+    frm_code_export.Show
+End Sub
+
+
 ' Purpose: Launches the JSON Export UserForm (frm_json_export).
 ' The control parameter is REQUIRED by the Ribbon's onAction mechanism.
 Public Sub LNS_ShowJsonExportForm(control As IRibbonControl)

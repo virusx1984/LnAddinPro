@@ -1,4 +1,95 @@
 Attribute VB_Name = "mod_funcs"
+' Purpose: Convert range to Markdown Table format
+' @param rng: Source Range
+' @return: String containing Markdown text
+Public Function RangeToMarkdown(rng As Range) As String
+    Dim r As Long, c As Long
+    Dim strBuilder As String
+    Dim rowStr As String
+    
+    ' 1. Header
+    rowStr = "|"
+    For c = 1 To rng.Columns.Count
+        ' CHANGE: Use .Text instead of array value
+        rowStr = rowStr & " " & CleanText(rng.Cells(1, c).Text) & " |"
+    Next c
+    strBuilder = strBuilder & rowStr & vbCrLf
+    
+    ' 2. Separator
+    rowStr = "|"
+    For c = 1 To rng.Columns.Count
+        rowStr = rowStr & " --- |"
+    Next c
+    strBuilder = strBuilder & rowStr & vbCrLf
+    
+    ' 3. Data
+    For r = 2 To rng.Rows.Count
+        rowStr = "|"
+        For c = 1 To rng.Columns.Count
+            ' CHANGE: Use .Text
+            rowStr = rowStr & " " & CleanText(rng.Cells(r, c).Text) & " |"
+        Next c
+        strBuilder = strBuilder & rowStr & vbCrLf
+    Next r
+    
+    RangeToMarkdown = strBuilder
+End Function
+
+' Purpose: Convert range to HTML Table format (Bootstrap ready)
+' @param rng: Source Range
+' @param includeClass: Boolean, if true adds Bootstrap classes
+' @return: String containing HTML text
+Public Function RangeToHTML(rng As Range, includeClass As Boolean) As String
+    Dim r As Long, c As Long
+    Dim strBuilder As String
+    Dim tableClass As String
+    
+    If includeClass Then tableClass = " class=""table table-striped table-bordered"""
+    strBuilder = "<table" & tableClass & ">" & vbCrLf
+    
+    ' 1. Header
+    strBuilder = strBuilder & "  <thead>" & vbCrLf & "    <tr>" & vbCrLf
+    For c = 1 To rng.Columns.Count
+        ' CHANGE: Use .Text
+        strBuilder = strBuilder & "      <th>" & CleanText(rng.Cells(1, c).Text) & "</th>" & vbCrLf
+    Next c
+    strBuilder = strBuilder & "    </tr>" & vbCrLf & "  </thead>" & vbCrLf
+    
+    ' 2. Data
+    strBuilder = strBuilder & "  <tbody>" & vbCrLf
+    For r = 2 To rng.Rows.Count
+        strBuilder = strBuilder & "    <tr>" & vbCrLf
+        For c = 1 To rng.Columns.Count
+            ' CHANGE: Use .Text
+            strBuilder = strBuilder & "      <td>" & CleanText(rng.Cells(r, c).Text) & "</td>" & vbCrLf
+        Next c
+        strBuilder = strBuilder & "    </tr>" & vbCrLf
+    Next r
+    strBuilder = strBuilder & "  </tbody>" & vbCrLf & "</table>"
+    
+    RangeToHTML = strBuilder
+End Function
+
+' Helper: Clean text to prevent breaking table structure
+Private Function CleanText(txt As String) As String
+    Dim s As String
+    s = txt
+    s = Replace(s, vbCrLf, " ")
+    s = Replace(s, vbCr, " ")
+    s = Replace(s, vbLf, " ")
+    s = Replace(s, "|", "/")
+    CleanText = Trim(s)
+End Function
+'+==========================================================+
+'|                                                          |
+'|                        <-- SECTION END -->               |
+'|                                                          |
+'+==========================================================+
+
+
+
+
+
 ' Purpose: Converts an Excel range into a compact, split-oriented JSON string format.
 '          The output contains separate arrays for headers, types, and data rows to optimize performance.
 '
@@ -148,6 +239,15 @@ Private Function EscapeJson(s As String) As String
     temp = Replace(temp, vbTab, "\t")
     EscapeJson = temp
 End Function
+'+==========================================================+
+'|                                                          |
+'|                        <-- SECTION END -->               |
+'|                                                          |
+'+==========================================================+
+
+
+
+
 
 ' Purpose: Compares two Excel data ranges (Table 1 and Table 2) based on specified column categories.
 '
@@ -577,6 +677,16 @@ Private Sub PopulateDictionary(ByVal rng As Range, ByVal indexCols As Object, By
         End If
     Next r
 End Sub
+'+==========================================================+
+'|                                                          |
+'|                        <-- SECTION END -->               |
+'|                                                          |
+'+==========================================================+
+
+
+
+
+
 
 ' Purpose: Generates a sequential time series array (e.g., dates, quarter strings, or annual labels)
 '          based on a composite string that defines the required frequency for a sequence of years.
@@ -672,6 +782,11 @@ Public Function GenerateTimeSeries( _
     End If
 
 End Function
+'+==========================================================+
+'|                                                          |
+'|                        <-- SECTION END -->               |
+'|                                                          |
+'+==========================================================+
 
 
 ' Purpose: Melts a table (wide-to-long format transformation), similar to pandas.melt().
@@ -787,4 +902,9 @@ Public Function MeltData(ByVal tableRange As Range, ByVal idColumnsRange As Rang
     MeltData = result
     
 End Function
+'+==========================================================+
+'|                                                          |
+'|                        <-- SECTION END -->               |
+'|                                                          |
+'+==========================================================+
 

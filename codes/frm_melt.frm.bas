@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_melt"
-Attribute VB_Base = "0{7AF388BF-3338-4708-BF67-BF1CFF08A23F}{16AE5378-53E0-4B25-97CA-682E393D3B3E}"
+Attribute VB_Base = "0{5ED3D028-4AD3-4AB1-B2F6-F751358FF7AA}{B67E3CE2-7DB6-4676-9F92-3471C58AC7B8}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -28,9 +28,6 @@ Private Sub UserForm_Initialize()
     Dim lblOutput As MSForms.Label
     Dim refOutputRange As RefEdit.RefEdit
 
-    
-
-
     ' --- Layout Constants ---
     Const CONTROL_WIDTH As Single = 200
     Const LABEL_WIDTH As Single = 150
@@ -57,7 +54,13 @@ Private Sub UserForm_Initialize()
         .Top = yPos
         .Width = CONTROL_WIDTH
         .Height = CONTROL_HEIGHT
-        .Text = ""
+        
+        ' UPDATED: Set default text to current selection address if it is a Range
+        If TypeName(Selection) = "Range" Then
+            .Text = Selection.Address(External:=False)
+        Else
+            .Text = ""
+        End If
     End With
     yPos = yPos + CONTROL_HEIGHT + SPACING
 
@@ -151,8 +154,7 @@ Private Sub UserForm_Initialize()
 End Sub
 
 ' -----------------------------------------------------------
-' Note: The btnRun_Click and btnCancel_Click subroutines remain unchanged,
-' as the control names are the same.
+' The btnRun_Click and btnCancel_Click subroutines remain unchanged
 ' -----------------------------------------------------------
 
 Private Sub btnRun_Click()
