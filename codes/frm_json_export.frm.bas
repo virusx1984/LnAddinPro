@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_json_export"
-Attribute VB_Base = "0{588BFF28-9EE5-4F65-A504-CC41C65D5F6E}{8FE283CE-CF84-4022-890F-F6CEEF17D491}"
+Attribute VB_Base = "0{8AE76E9D-3720-49FE-8FD8-97D33542B133}{C3CE3BB8-C101-47CE-82D6-E5107040F964}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -327,12 +327,23 @@ Private Sub btnRun_Click()
     On Error GoTo ErrHandler
     jsonStr = RangeToCompactJson(rng, typeDict, fmtDict)
     
-    ' Write to File
-    Dim fso As Object, ts As Object
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    Set ts = fso.CreateTextFile(filePath, True)
-    ts.Write jsonStr
-    ts.Close
+'    Write to File
+'    Dim fso As Object, ts As Object
+'    Set fso = CreateObject("Scripting.FileSystemObject")
+'    Set ts = fso.CreateTextFile(filePath, True)
+'    ts.Write jsonStr
+'    ts.Close
+
+    Dim stream As Object
+    Set stream = CreateObject("ADODB.Stream")
+    With stream
+        .Type = 2
+        .Charset = "UTF-8"
+        .Open
+        .WriteText jsonStr
+        .SaveToFile filePath, 2 ' 2 = adSaveCreateOverWrite
+        .Close
+    End With
     
     MsgBox "JSON generated successfully!", vbInformation
     Unload Me
