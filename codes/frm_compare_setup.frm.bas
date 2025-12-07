@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_compare_setup"
-Attribute VB_Base = "0{4746D80B-670A-4F00-944D-F56257573FC2}{85CBA5B1-0549-4CBA-890F-963F2684E145}"
+Attribute VB_Base = "0{F6DD75A0-F949-49DB-8815-3406DE55E347}{BA68C092-FEA0-417D-8E65-332E76B6B63F}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -8,7 +8,7 @@ Attribute VB_TemplateDerived = False
 Attribute VB_Customizable = False
 ' UserForm: frm_compare_setup
 ' Purpose: Complete Wizard with Range Selection, Column Roles, Ordering, Formatting, and Execution.
-' UPDATED: Added Headers for ListBox and maintained previous fixes.
+' UPDATED: Auto-fill Range A and B from multi-selection (Areas).
 Option Explicit
 
 ' --- 1. Event Handler Declarations ---
@@ -62,6 +62,29 @@ Private Sub UserForm_Initialize()
     Dim currentTop As Long: currentTop = MARGIN
     
     ' ============================
+    ' PRE-CHECK SELECTION (Updated with Sheet Names)
+    ' ============================
+    Dim addr1 As String
+    Dim addr2 As String
+    Dim selSheetName As String
+    
+    ' ¼ì²éµ±Ç°Ñ¡ÖÐÁËÊ²Ã´
+    If TypeName(Selection) = "Range" Then
+        ' »ñÈ¡µ±Ç°Ñ¡ÖÐÇøÓòËùÔÚµÄ¹¤×÷±íÃû³Æ (´¦Àí´ø¿Õ¸ñµÄÃû×ÖÐèÒª¼ÓÉÏµ¥ÒýºÅ)
+        selSheetName = "'" & Selection.Parent.Name & "'!"
+        
+        If Selection.Areas.Count >= 1 Then
+            ' Æ´½Ó SheetÃû + µØÖ·
+            addr1 = selSheetName & Selection.Areas(1).Address(External:=False)
+        End If
+        
+        If Selection.Areas.Count >= 2 Then
+            ' Æ´½Ó SheetÃû + µØÖ·
+            addr2 = selSheetName & Selection.Areas(2).Address(External:=False)
+        End If
+    End If
+    
+    ' ============================
     ' SECTION 1: RANGE SELECTION
     ' ============================
     
@@ -72,7 +95,7 @@ Private Sub UserForm_Initialize()
     Set refRange1 = Me.Controls.Add("RefEdit.Ctrl", "refRange1")
     With refRange1
         .Left = MARGIN + LBL_W: .Top = currentTop: .Width = INPUT_W: .Height = CTRL_H
-        If TypeName(Selection) = "Range" Then .Text = Selection.Address(External:=False)
+        .Text = addr1
     End With
     With Me.Controls.Add("Forms.Label.1", "lblName1")
         .Caption = "Name:": .Left = MARGIN + LBL_W + INPUT_W + 10: .Top = currentTop + 3: .Width = 35
@@ -90,6 +113,7 @@ Private Sub UserForm_Initialize()
     Set refRange2 = Me.Controls.Add("RefEdit.Ctrl", "refRange2")
     With refRange2
         .Left = MARGIN + LBL_W: .Top = currentTop: .Width = INPUT_W: .Height = CTRL_H
+        .Text = addr2
     End With
     With Me.Controls.Add("Forms.Label.1", "lblName2")
         .Caption = "Name:": .Left = MARGIN + LBL_W + INPUT_W + 10: .Top = currentTop + 3: .Width = 35
@@ -125,54 +149,29 @@ Private Sub UserForm_Initialize()
         .Enabled = False
     End With
     
-    ' --- [NEW] HEADER LABELS ---
-    ' Define widths here to ensure labels match listbox columns
+    ' --- HEADERS ---
     Dim colW1 As Double: colW1 = 150
     Dim colW2 As Double: colW2 = 90
     Dim colW3 As Double: colW3 = 80
     
-    ' Header 1: Column Name
     With frameConfig.Controls.Add("Forms.Label.1", "lblHdr1")
-        .Caption = "Column Name"
-        .Left = 10
-        .Top = 20
-        .Width = colW1
-        .Font.Bold = True
-        .Font.Size = 9
-        .ForeColor = &H8000000D ' System Highlight Color
+        .Caption = "Column Name": .Left = 10: .Top = 20: .Width = colW1
+        .Font.Bold = True: .Font.Size = 9: .ForeColor = &H8000000D
     End With
-    
-    ' Header 2: Role
     With frameConfig.Controls.Add("Forms.Label.1", "lblHdr2")
-        .Caption = "Role / Status"
-        .Left = 10 + colW1
-        .Top = 20
-        .Width = colW2
-        .Font.Bold = True
-        .Font.Size = 9
-        .ForeColor = &H8000000D
+        .Caption = "Role / Status": .Left = 10 + colW1: .Top = 20: .Width = colW2
+        .Font.Bold = True: .Font.Size = 9: .ForeColor = &H8000000D
     End With
-    
-    ' Header 3: Format
     With frameConfig.Controls.Add("Forms.Label.1", "lblHdr3")
-        .Caption = "Format"
-        .Left = 10 + colW1 + colW2
-        .Top = 20
-        .Width = colW3
-        .Font.Bold = True
-        .Font.Size = 9
-        .ForeColor = &H8000000D
+        .Caption = "Format": .Left = 10 + colW1 + colW2: .Top = 20: .Width = colW3
+        .Font.Bold = True: .Font.Size = 9: .ForeColor = &H8000000D
     End With
     
-    ' --- UPDATED LISTBOX POSITION ---
+    ' --- LISTBOX ---
     Set lstColumns = frameConfig.Controls.Add("Forms.ListBox.1", "lstColumns")
     With lstColumns
-        .Left = 10
-        .Top = 35 ' Moved down (was 20) to make room for headers
-        .Width = 340
-        .Height = 235 ' Slightly reduced height to fit in frame
-        .ColumnCount = 3
-        .ColumnWidths = CStr(colW1) & ";" & CStr(colW2) & ";" & CStr(colW3)
+        .Left = 10: .Top = 35: .Width = 340: .Height = 235
+        .ColumnCount = 3: .ColumnWidths = CStr(colW1) & ";" & CStr(colW2) & ";" & CStr(colW3)
         .MultiSelect = fmMultiSelectExtended
     End With
     
@@ -180,7 +179,6 @@ Private Sub UserForm_Initialize()
     Dim btnLeft As Long: btnLeft = 360
     Dim btnTop As Long: btnTop = 20
     
-    ' Key
     With frameConfig.Controls.Add("Forms.Label.1", "lblKey")
         .Caption = "Match By:": .Left = btnLeft: .Top = btnTop: .Width = 80: .Height = 15
     End With
@@ -191,7 +189,6 @@ Private Sub UserForm_Initialize()
     End With
     btnTop = btnTop + 30
     
-    ' Reference
     With frameConfig.Controls.Add("Forms.Label.1", "lblRef")
         .Caption = "Reference Src:": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 15
     End With
@@ -207,7 +204,6 @@ Private Sub UserForm_Initialize()
     End With
     btnTop = btnTop + 30
     
-    ' Compare/Ignore
     With frameConfig.Controls.Add("Forms.Label.1", "lblOth")
         .Caption = "Action:": .Left = btnLeft: .Top = btnTop: .Width = 80: .Height = 15
     End With
@@ -223,7 +219,6 @@ Private Sub UserForm_Initialize()
     End With
     btnTop = btnTop + 30
     
-    ' Formatting
     Set btnSetFormat = frameConfig.Controls.Add("Forms.CommandButton.1", "btnSetFormat")
     With btnSetFormat
         .Caption = "Set Format ($%)": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
@@ -264,32 +259,59 @@ Private Sub btnValidate_Click()
     Dim rng1 As Range, rng2 As Range
     Dim headers1 As Variant, headers2 As Variant
     Dim i As Long
+    Dim dataVal As Variant
+    Dim isNum As Boolean
     
     On Error Resume Next
     Set rng1 = Range(refRange1.Text)
     Set rng2 = Range(refRange2.Text)
     On Error GoTo 0
     
+    ' --- Basic Validation ---
     If rng1 Is Nothing Or rng2 Is Nothing Then MsgBox "Invalid ranges.", vbCritical: Exit Sub
     If rng1.Columns.Count <> rng2.Columns.Count Then MsgBox "Column count mismatch.", vbCritical: Exit Sub
     
+    ' Get Headers
     headers1 = rng1.Rows(1).Value
     headers2 = rng2.Rows(1).Value
     
+    ' Verify Header Consistency
     For i = 1 To UBound(headers1, 2)
         If CStr(headers1(1, i)) <> CStr(headers2(1, i)) Then MsgBox "Header mismatch at col " & i, vbCritical: Exit Sub
     Next i
     
+    ' --- Validation Passed, Enable Config Section ---
     ToggleInputs False
     btnReset.Enabled = True
     frameConfig.Enabled = True
     btnRun.Enabled = True
     
+    ' --- Populate ListBox & Auto-Detect Roles ---
     lstColumns.Clear
     For i = 1 To UBound(headers1, 2)
         lstColumns.AddItem headers1(1, i)
-        lstColumns.List(i - 1, 1) = "COMPARE"
-        lstColumns.List(i - 1, 2) = "#,##0_-;[Color3]-#,##0_-;""-""_-;@"
+        
+        ' Logic: Check the 2nd row (data row) of Range A
+        ' If rows > 1, check 2nd row; else (header only) assume non-numeric
+        If rng1.Rows.Count > 1 Then
+            dataVal = rng1.Cells(2, i).Value
+            ' Check if numeric and not empty
+            isNum = IsNumeric(dataVal) And Not IsEmpty(dataVal)
+        Else
+            isNum = False
+        End If
+        
+        If isNum Then
+            ' === Numeric: Default to COMPARE ===
+            lstColumns.List(i - 1, 1) = "COMPARE"
+            ' Set standard number format (thousands separator, red for negative)
+            lstColumns.List(i - 1, 2) = "#,##0.00_-;[Red]-#,##0.00_-;""-""_-;@"
+        Else
+            ' === Non-Numeric: Default to INDEX ===
+            lstColumns.List(i - 1, 1) = "INDEX"
+            ' Set text format
+            lstColumns.List(i - 1, 2) = "@"
+        End If
     Next i
 End Sub
 
@@ -404,6 +426,7 @@ Private Sub btnRun_Click()
     
     ' --- CALL MAIN FUNCTION ---
     Dim resultData As Variant
+    ' Check if mod_funcs exists, assume it does based on your context
     resultData = mod_funcs.CompareExcelRanges( _
         rngA, _
         rngB, _
