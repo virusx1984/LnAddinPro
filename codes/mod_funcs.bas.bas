@@ -9,7 +9,7 @@ Public Function RangeToMarkdown(rng As Range) As String
     
     ' 1. Header
     rowStr = "|"
-    For c = 1 To rng.Columns.Count
+    For c = 1 To rng.Columns.count
         ' CHANGE: Use .Text instead of array value
         rowStr = rowStr & " " & CleanText(rng.Cells(1, c).Text) & " |"
     Next c
@@ -17,15 +17,15 @@ Public Function RangeToMarkdown(rng As Range) As String
     
     ' 2. Separator
     rowStr = "|"
-    For c = 1 To rng.Columns.Count
+    For c = 1 To rng.Columns.count
         rowStr = rowStr & " --- |"
     Next c
     strBuilder = strBuilder & rowStr & vbCrLf
     
     ' 3. Data
-    For r = 2 To rng.Rows.Count
+    For r = 2 To rng.Rows.count
         rowStr = "|"
-        For c = 1 To rng.Columns.Count
+        For c = 1 To rng.Columns.count
             ' CHANGE: Use .Text
             rowStr = rowStr & " " & CleanText(rng.Cells(r, c).Text) & " |"
         Next c
@@ -49,7 +49,7 @@ Public Function RangeToHTML(rng As Range, includeClass As Boolean) As String
     
     ' 1. Header
     strBuilder = strBuilder & "  <thead>" & vbCrLf & "    <tr>" & vbCrLf
-    For c = 1 To rng.Columns.Count
+    For c = 1 To rng.Columns.count
         ' CHANGE: Use .Text
         strBuilder = strBuilder & "      <th>" & CleanText(rng.Cells(1, c).Text) & "</th>" & vbCrLf
     Next c
@@ -57,9 +57,9 @@ Public Function RangeToHTML(rng As Range, includeClass As Boolean) As String
     
     ' 2. Data
     strBuilder = strBuilder & "  <tbody>" & vbCrLf
-    For r = 2 To rng.Rows.Count
+    For r = 2 To rng.Rows.count
         strBuilder = strBuilder & "    <tr>" & vbCrLf
-        For c = 1 To rng.Columns.Count
+        For c = 1 To rng.Columns.count
             ' CHANGE: Use .Text
             strBuilder = strBuilder & "      <td>" & CleanText(rng.Cells(r, c).Text) & "</td>" & vbCrLf
         Next c
@@ -357,8 +357,8 @@ CheckIgnore:
     End If
 
     ' --- 2. Initial Checks (Column Count and Header Matching) ---
-    colCount = rng1.Columns.Count
-    If colCount <> rng2.Columns.Count Then
+    colCount = rng1.Columns.count
+    If colCount <> rng2.Columns.count Then
         CompareExcelRanges = Array(Array("Error: The two ranges have different column counts."))
         Exit Function
     End If
@@ -447,8 +447,8 @@ CheckIgnore:
     Next key
     
     For Each key In allKeys.Keys
-        Dim valuesT1 As Variant: valuesT1 = dictT1.Item(key)
-        Dim valuesT2 As Variant: valuesT2 = dictT2.Item(key)
+        Dim valuesT1 As Variant: valuesT1 = dictT1.item(key)
+        Dim valuesT2 As Variant: valuesT2 = dictT2.item(key)
         
         Dim isT1Present As Boolean: isT1Present = Not IsEmpty(valuesT1)
         Dim isT2Present As Boolean: isT2Present = Not IsEmpty(valuesT2)
@@ -458,7 +458,7 @@ CheckIgnore:
         
         If isT1Present And isT2Present Then
             For Each compHeader In compareColIndexes.Keys
-                i = compareColIndexes.Item(compHeader)
+                i = compareColIndexes.item(compHeader)
                 If CStr(valuesT1(i)) <> CStr(valuesT2(i)) Then
                     hasDiff = True
                     Exit For
@@ -484,7 +484,7 @@ CheckIgnore:
         
         ' 2b. Index Columns
         For Each compHeader In indexColIndexes.Keys
-            i = indexColIndexes.Item(compHeader)
+            i = indexColIndexes.item(compHeader)
             If isT1Present Then
                 rowResult.Add compHeader, valuesT1(i)
             Else
@@ -494,7 +494,7 @@ CheckIgnore:
         
         ' 2c. Reference Columns
         For Each compHeader In refColIndexes.Keys
-            i = refColIndexes.Item(compHeader)
+            i = refColIndexes.item(compHeader)
             Dim refVal As Variant: refVal = ""
             Dim refT2 As Variant: If isT2Present Then refT2 = valuesT2(i) Else refT2 = Empty
             Dim refT1 As Variant: If isT1Present Then refT1 = valuesT1(i) Else refT1 = Empty
@@ -525,7 +525,7 @@ CheckIgnore:
         Dim diffValues As Object: Set diffValues = CreateObject("Scripting.Dictionary")
         
         For Each compHeader In compareColIndexes.Keys
-            i = compareColIndexes.Item(compHeader)
+            i = compareColIndexes.item(compHeader)
             
             ' --- MODIFIED LOGIC START ---
             ' If the table is present, use its value. If NOT present (missing row), fill with 0.
@@ -565,36 +565,36 @@ CheckIgnore:
         Next
         
         ' 2e. Populate Result
-        For Each compHeader In t1Values.Keys: rowResult.Add compHeader & "_T1", t1Values.Item(compHeader): Next
-        For Each compHeader In t2Values.Keys: rowResult.Add compHeader & "_T2", t2Values.Item(compHeader): Next
-        For Each compHeader In diffValues.Keys: rowResult.Add compHeader & "_Diff", diffValues.Item(compHeader): Next
+        For Each compHeader In t1Values.Keys: rowResult.Add compHeader & "_T1", t1Values.item(compHeader): Next
+        For Each compHeader In t2Values.Keys: rowResult.Add compHeader & "_T2", t2Values.item(compHeader): Next
+        For Each compHeader In diffValues.Keys: rowResult.Add compHeader & "_Diff", diffValues.item(compHeader): Next
         
         resultCollection.Add rowResult.Items
 NextKey:
     Next key
     
     ' --- 6. Assemble Output ---
-    If resultCollection.Count = 0 Then
+    If resultCollection.count = 0 Then
         CompareExcelRanges = Array(Array("Success: No differences found."))
         Exit Function
     End If
     
     Dim totalOutputCols As Long
-    totalOutputCols = 1 + indexColIndexes.Count + refColIndexes.Count + (compareColIndexes.Count * 3)
+    totalOutputCols = 1 + indexColIndexes.count + refColIndexes.count + (compareColIndexes.count * 3)
     
     Dim arrResult() As Variant
-    ReDim arrResult(1 To resultCollection.Count + 2, 1 To totalOutputCols)
+    ReDim arrResult(1 To resultCollection.count + 2, 1 To totalOutputCols)
     
     ' Header Row A
     Dim outputRow As Long: outputRow = 1
     Dim colIndex As Long: colIndex = 1
     
     arrResult(outputRow, colIndex) = "": colIndex = colIndex + 1
-    For i = 1 To indexColIndexes.Count: arrResult(outputRow, colIndex) = "": colIndex = colIndex + 1: Next
-    For i = 1 To refColIndexes.Count: arrResult(outputRow, colIndex) = "Ref": colIndex = colIndex + 1: Next
-    For i = 1 To compareColIndexes.Count: arrResult(outputRow, colIndex) = "table1": colIndex = colIndex + 1: Next
-    For i = 1 To compareColIndexes.Count: arrResult(outputRow, colIndex) = "table2": colIndex = colIndex + 1: Next
-    For i = 1 To compareColIndexes.Count: arrResult(outputRow, colIndex) = "diff": colIndex = colIndex + 1: Next
+    For i = 1 To indexColIndexes.count: arrResult(outputRow, colIndex) = "": colIndex = colIndex + 1: Next
+    For i = 1 To refColIndexes.count: arrResult(outputRow, colIndex) = "Ref": colIndex = colIndex + 1: Next
+    For i = 1 To compareColIndexes.count: arrResult(outputRow, colIndex) = "table1": colIndex = colIndex + 1: Next
+    For i = 1 To compareColIndexes.count: arrResult(outputRow, colIndex) = "table2": colIndex = colIndex + 1: Next
+    For i = 1 To compareColIndexes.count: arrResult(outputRow, colIndex) = "diff": colIndex = colIndex + 1: Next
     
     ' Header Row B
     outputRow = 2
@@ -637,8 +637,8 @@ Private Sub PopulateDictionary(ByVal rng As Range, ByVal indexCols As Object, By
     Dim newValues() As Variant
     Dim arrayColCount As Long
     
-    Set dataRange = rng.Offset(1, 0).Resize(rng.Rows.Count - 1, rng.Columns.Count)
-    If dataRange.Rows.Count = 0 Then Exit Sub
+    Set dataRange = rng.Offset(1, 0).Resize(rng.Rows.count - 1, rng.Columns.count)
+    If dataRange.Rows.count = 0 Then Exit Sub
     
     dataArray = dataRange.Value
     arrayColCount = UBound(dataArray, 2)
@@ -657,7 +657,7 @@ Private Sub PopulateDictionary(ByVal rng As Range, ByVal indexCols As Object, By
             Next c
             targetDict.Add keyString, newValues
         Else
-            existingValues = targetDict.Item(keyString)
+            existingValues = targetDict.item(keyString)
             For c = 1 To arrayColCount
                 Dim isIndexCol As Boolean: isIndexCol = False
                 For Each colIndex In indexCols.Items
@@ -673,7 +673,7 @@ Private Sub PopulateDictionary(ByVal rng As Range, ByVal indexCols As Object, By
                     End If
                 End If
             Next c
-            targetDict.Item(keyString) = existingValues
+            targetDict.item(keyString) = existingValues
         End If
     Next r
 End Sub
@@ -767,7 +767,7 @@ Public Function GenerateTimeSeries( _
     ' Convert the dynamic Collection object into a static 1D Variant Array for output.
     Dim resultArray() As Variant
     Dim listCount As Long
-    listCount = resultList.Count
+    listCount = resultList.count
 
     If listCount > 0 Then
         ' ReDim the array to the exact size of the Collection (1-based index).
@@ -821,13 +821,13 @@ Public Function MeltData(ByVal tableRange As Range, ByVal idColumnsRange As Rang
     totalCols = UBound(data, 2) ' Total number of columns
     
     ' Validate that the tableRange and idColumnsRange are aligned in height.
-    If tableRange.Rows.Count <> idColumnsRange.Rows.Count Then
+    If tableRange.Rows.count <> idColumnsRange.Rows.count Then
         MeltData = CVErr(xlErrValue) ' Return #VALUE! error
         Exit Function
     End If
 
     ' Get ID column count from the passed range.
-    idColCount = idColumnsRange.Columns.Count
+    idColCount = idColumnsRange.Columns.count
     valueColCount = totalCols - idColCount
     
     ' Validate that there are value columns to melt.

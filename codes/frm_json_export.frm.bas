@@ -203,7 +203,7 @@ Private Sub btnValidate_Click()
     
     ' Basic Validation
     If rng Is Nothing Then MsgBox "Invalid range.", vbCritical: Exit Sub
-    If rng.Rows.Count < 2 Then MsgBox "Range must have header and data (at least 2 rows).", vbCritical: Exit Sub
+    If rng.Rows.count < 2 Then MsgBox "Range must have header and data (at least 2 rows).", vbCritical: Exit Sub
     
     ' Load Headers (Row 1) and First Data Row (Row 2)
     headers = rng.Rows(1).Value
@@ -314,9 +314,9 @@ Private Sub btnRun_Click()
         colName = lstColumns.List(i, 0)
         colType = lstColumns.List(i, 1)
         colFmt = lstColumns.List(i, 2)
-        typeDict.Item(colName) = colType
+        typeDict.item(colName) = colType
         If colType = "category" Then hasCate = True
-        If Len(colFmt) > 0 Then fmtDict.Item(colName) = colFmt
+        If Len(colFmt) > 0 Then fmtDict.item(colName) = colFmt
     Next i
     
     If Not hasCate Then

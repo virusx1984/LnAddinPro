@@ -73,12 +73,12 @@ Private Sub UserForm_Initialize()
         ' »ñÈ¡µ±Ç°Ñ¡ÖÐÇøÓòËùÔÚµÄ¹¤×÷±íÃû³Æ (´¦Àí´ø¿Õ¸ñµÄÃû×ÖÐèÒª¼ÓÉÏµ¥ÒýºÅ)
         selSheetName = "'" & Selection.Parent.Name & "'!"
         
-        If Selection.Areas.Count >= 1 Then
+        If Selection.Areas.count >= 1 Then
             ' Æ´½Ó SheetÃû + µØÖ·
             addr1 = selSheetName & Selection.Areas(1).Address(External:=False)
         End If
         
-        If Selection.Areas.Count >= 2 Then
+        If Selection.Areas.count >= 2 Then
             ' Æ´½Ó SheetÃû + µØÖ·
             addr2 = selSheetName & Selection.Areas(2).Address(External:=False)
         End If
@@ -269,7 +269,7 @@ Private Sub btnValidate_Click()
     
     ' --- Basic Validation ---
     If rng1 Is Nothing Or rng2 Is Nothing Then MsgBox "Invalid ranges.", vbCritical: Exit Sub
-    If rng1.Columns.Count <> rng2.Columns.Count Then MsgBox "Column count mismatch.", vbCritical: Exit Sub
+    If rng1.Columns.count <> rng2.Columns.count Then MsgBox "Column count mismatch.", vbCritical: Exit Sub
     
     ' Get Headers
     headers1 = rng1.Rows(1).Value
@@ -293,7 +293,7 @@ Private Sub btnValidate_Click()
         
         ' Logic: Check the 2nd row (data row) of Range A
         ' If rows > 1, check 2nd row; else (header only) assume non-numeric
-        If rng1.Rows.Count > 1 Then
+        If rng1.Rows.count > 1 Then
             dataVal = rng1.Cells(2, i).Value
             ' Check if numeric and not empty
             isNum = IsNumeric(dataVal) And Not IsEmpty(dataVal)
@@ -390,7 +390,7 @@ Private Sub btnRun_Click()
         colFmt = lstColumns.List(i, 2)
         
         ' Store format for later
-        If Len(colFmt) > 0 And LCase(colFmt) <> "general" Then dictFormats.Item(colName) = colFmt
+        If Len(colFmt) > 0 And LCase(colFmt) <> "general" Then dictFormats.item(colName) = colFmt
         
         Select Case status
             Case "INDEX"
@@ -401,11 +401,11 @@ Private Sub btnRun_Click()
                 
             Case "REF: Range A"
                 strRef = strRef & colName & ","
-                dictRefDirs.Item(colName) = False
+                dictRefDirs.item(colName) = False
                 
             Case "REF: Range B"
                 strRef = strRef & colName & ","
-                dictRefDirs.Item(colName) = True
+                dictRefDirs.item(colName) = True
         End Select
     Next i
     
@@ -414,7 +414,7 @@ Private Sub btnRun_Click()
     arrIgnore = StringToArray(strIgnore)
     arrRef = StringToArray(strRef)
     
-    If dictRefDirs.Count > 0 Then
+    If dictRefDirs.count > 0 Then
         Set finalRefDirs = dictRefDirs
     Else
         finalRefDirs = Empty
@@ -451,7 +451,7 @@ Private Sub btnRun_Click()
         outputRng.Resize(1, cCount).Font.Bold = True
         
         ' APPLY FORMATTING
-        If dictFormats.Count > 0 And rCount > 2 Then
+        If dictFormats.count > 0 And rCount > 2 Then
             Dim headerRng As Range, cell As Range
             Set headerRng = outputRng.Offset(1, 0).Resize(1, cCount)
             For Each cell In headerRng.Cells

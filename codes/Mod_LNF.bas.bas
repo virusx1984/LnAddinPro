@@ -1,156 +1,95 @@
 Attribute VB_Name = "Mod_LNF"
-' This function converts a given Excel range into a Markdown table string.
-' It's useful for quickly formatting data for documentation or code repositories.
-'
-' @param sourceRange (Range): The input range to be converted. This is a reference to the actual range.
-' @param headerRowsCount (Long): The number of header rows. A separator line will be inserted after this row. Defaults to 1.
-' @param columnDelimiter (String): The character to separate columns. Defaults to "|".
-' @param rowDelimiter (String): The character to separate rows. Defaults to a newline.
-' @return (String): A string formatted as a Markdown table.
-Public Function LNF_CreateTable(ByVal sourceRange As Range, _
-                                Optional ByVal headerRowsCount As Long = 1, _
-                                Optional ByVal columnDelimiter As String = "|", _
-                                Optional ByVal rowDelimiter As String = "") As String
+Option Explicit
 
-    ' Check if delimiters are empty and set to defaults if necessary.
-    ' Using ByVal for parameters allows for this without affecting the original variable.
-    If columnDelimiter = "" Then columnDelimiter = "|"
-    If rowDelimiter = "" Then rowDelimiter = Chr(10)
-
-    ' Use descriptive variable names and declare their types for clarity and performance.
-    Dim totalRows As Long
-    Dim totalColumns As Long
-    Dim markdownTableString As String
-    Dim currentRowString As String
-    Dim colIndex As Long
-    Dim rowIndex As Long
-
-    totalRows = sourceRange.Rows.Count
-    totalColumns = sourceRange.Columns.Count
-
-    ' Build the Markdown table string row by row.
-    For rowIndex = 1 To totalRows
-        currentRowString = ""
-
-        ' Loop through each column in the current row.
-        For colIndex = 1 To totalColumns
-            ' Get the text from the cell and add the column delimiter.
-            ' Ensure the string starts and ends with a delimiter for valid Markdown.
-            currentRowString = currentRowString & columnDelimiter & sourceRange.Cells(rowIndex, colIndex).Text
-        Next colIndex
-        
-        ' Add closing delimiter and row delimiter.
-        currentRowString = currentRowString & columnDelimiter & rowDelimiter
-        
-        ' Append the formatted row to the main result string.
-        markdownTableString = markdownTableString & currentRowString
-        
-        ' Check if a header separator line needs to be inserted.
-        If rowIndex = headerRowsCount Then
-            Dim separatorRowString As String
-            separatorRowString = ""
-            
-            For colIndex = 1 To totalColumns
-                separatorRowString = separatorRowString & columnDelimiter & "---"
-            Next colIndex
-
-            ' Add closing delimiter and row delimiter for the separator line.
-            separatorRowString = separatorRowString & columnDelimiter & rowDelimiter
-            
-            markdownTableString = markdownTableString & separatorRowString
-        End If
-    Next rowIndex
+' ==============================================================================
+' SUB: Register_LNF_Functions
+' Purpose: Registers function descriptions and argument help text for the
+'          Excel Function Wizard (Shift + F3).
+' Usage:   Call this from Workbook_Open in ThisWorkbook.
+' ==============================================================================
+Public Sub Register_LNF_Functions()
     
-    ' Return the final Markdown table string.
-    LNF_CreateTable = markdownTableString
+    Dim categoryName As String
+    categoryName = "LNF Tools" ' This category will appear in the Function Wizard
     
-End Function
+    ' --- 1. LNF_Join ---
+    Application.MacroOptions _
+        Macro:="LNF_Join", _
+        Description:="Concatenates text from a range into a single string with optional delimiters and surrounding characters.", _
+        Category:=categoryName, _
+        ArgumentDescriptions:=Array( _
+            "sourceRange: The range of cells to join.", _
+            "joinString: The delimiter string (e.g., comma).", _
+            "leftSurround: (Optional) Character(s) to add before each item.", _
+            "rightSurround: (Optional) Character(s) to add after each item. Defaults to leftSurround if omitted." _
+        )
 
+    ' --- 2. LNF_RegexExtract ---
+    Application.MacroOptions _
+        Macro:="LNF_RegexExtract", _
+        Description:="Extracts the first substring matching a Regular Expression pattern.", _
+        Category:=categoryName, _
+        ArgumentDescriptions:=Array( _
+            "sourceText: The original text to search.", _
+            "pattern: The Regex pattern (e.g., ""\d+"" for numbers).", _
+            "ignoreCase: (Optional) True to ignore case. Default is True." _
+        )
 
+    ' --- 3. LNF_ExtractNumber ---
+    Application.MacroOptions _
+        Macro:="LNF_ExtractNumber", _
+        Description:="Removes non-numeric characters from a string, keeping only digits, decimal points, and leading negative signs.", _
+        Category:=categoryName, _
+        ArgumentDescriptions:=Array( _
+            "sourceText: The dirty string containing numbers (e.g., ""USD 1,200.00"")." _
+        )
 
-' This function converts a given Excel range, including merged cells, into an HTML table string.
-' It's highly useful for converting Excel data into web-friendly formats.
-'
-' @param sourceRange (Range): The input range to be converted.
-' @param headerRowsCount (Long): The number of rows to be treated as header cells (<th>).
-' @return (String): A string formatted as an HTML table.
-Public Function LNF_RangeToHTML(ByVal sourceRange As Range, ByVal headerRowsCount As Long) As String
-    
-    Dim html As String
-    Dim currentRow As Long, currentColumn As Long
-    Dim cell As Range
-    
-    ' Use a more modern and robust way to handle dictionary objects.
-    ' This requires adding a reference to "Microsoft Scripting Runtime".
-    ' Go to Tools -> References in the VBA editor, and check the box for "Microsoft Scripting Runtime".
-    Dim processedCells As Scripting.Dictionary
-    Set processedCells = New Scripting.Dictionary
+    ' --- 4. LNF_GetLastRow ---
+    Application.MacroOptions _
+        Macro:="LNF_GetLastRow", _
+        Description:="Returns the row number of the last non-empty cell in a specific column.", _
+        Category:=categoryName, _
+        ArgumentDescriptions:=Array( _
+            "ws: The target Worksheet object.", _
+            "col: (Optional) The column index (1) or letter (""A""). Default is 1." _
+        )
         
-    html = "<table border='1'>" & vbCrLf
-    
-    For currentRow = 1 To sourceRange.Rows.Count
-        html = html & "<tr>" & vbCrLf
-        
-        For currentColumn = 1 To sourceRange.Columns.Count
-            Set cell = sourceRange.Cells(currentRow, currentColumn)
-            
-            ' Skip cells that are part of a merged area already processed.
-            If Not processedCells.Exists(cell.Address(External:=True)) Then
-                
-                Dim rowspanCount As Long
-                Dim colspanCount As Long
-                
-                ' Get the dimensions of the merged area.
-                ' Use a temporary range variable to prevent errors if the cell is not merged.
-                Dim mergedArea As Range
-                Set mergedArea = cell.MergeArea
-                rowspanCount = mergedArea.Rows.Count
-                colspanCount = mergedArea.Columns.Count
-                
-                ' Determine the HTML tag based on whether it's a header row or a data row.
-                Dim cellTag As String
-                If currentRow <= headerRowsCount Then
-                    cellTag = "th"
-                Else
-                    cellTag = "td"
-                End If
-                
-                ' Build the HTML for the current cell.
-                html = html & "<" & cellTag
-                
-                If rowspanCount > 1 Then html = html & " rowspan='" & rowspanCount & "'"
-                If colspanCount > 1 Then html = html & " colspan='" & colspanCount & "'"
-                
-                html = html & ">" & cell.Text & "</" & cellTag & ">" & vbCrLf
-                
-                ' Mark all cells in the merged area as processed to prevent re-processing.
-                Dim mergedCell As Range
-                For Each mergedCell In mergedArea
-                    ' Using the full address including sheet name makes the key more robust.
-                    processedCells.Add mergedCell.Address(External:=True), True
-                Next mergedCell
-            End If
-        Next currentColumn
-        
-        html = html & "</tr>" & vbCrLf
-    Next currentRow
-    
-    html = html & "</table>"
-    LNF_RangeToHTML = html
-End Function
+    ' --- 5. LNF_Exists ---
+    Application.MacroOptions _
+        Macro:="LNF_Exists", _
+        Description:="Checks if a specific value exists within a Range or an Array.", _
+        Category:=categoryName, _
+        ArgumentDescriptions:=Array( _
+            "valueToFind: The value to search for.", _
+            "sourceContainer: The search scope (Range object or Array)." _
+        )
 
+    ' --- 6. LNF_VLookupNth ---
+    Application.MacroOptions _
+        Macro:="LNF_VLookupNth", _
+        Description:="Advanced VLookup that retrieves the N-th match instead of just the first one.", _
+        Category:=categoryName, _
+        ArgumentDescriptions:=Array( _
+            "lookupVal: The value to look up.", _
+            "searchRng: The range to search within (e.g., Column A).", _
+            "returnColOffset: The number of columns to the right to retrieve data from (0 = same column).", _
+            "matchIndex: Which match instance to return (1 = first, 2 = second, etc.)." _
+        )
+    
+    ' Optional: Confirmation message for debugging (comment out in production)
+    ' MsgBox "LNF Function descriptions registered successfully.", vbInformation
+    
+End Sub
 
-' This function concatenates the text from a given range of cells.
-' It allows for a custom join string and optional surrounding characters for each cell's text.
-'
-' @param sourceRange (Range): The range of cells whose text is to be joined.
-' @param joinString (String): The string used to separate the text from each cell.
-' @param leftSurround (Optional String): The character(s) to place at the beginning of each cell's text.
-' @param rightSurround (Optional String): The character(s) to place at the end of each cell's text.
-' @return (String): The concatenated string.
+' ==============================================================================
+' FUNCTION: LNF_Join
+' Purpose:  Concatenates text from a given range of cells.
+' ==============================================================================
 Public Function LNF_Join(ByVal sourceRange As Range, ByVal joinString As String, _
                          Optional ByVal leftSurround As String = "", _
                          Optional ByVal rightSurround As String = "") As String
+Attribute LNF_Join.VB_Description = "Concatenates text from a range into a single string with optional delimiters and surrounding characters."
+Attribute LNF_Join.VB_ProcData.VB_Invoke_Func = " \n20"
     
     Dim cell As Range
     Dim resultString As String
@@ -162,7 +101,7 @@ Public Function LNF_Join(ByVal sourceRange As Range, ByVal joinString As String,
     For Each cell In sourceRange
         ' Avoid processing empty cells unless specifically desired.
         ' This prevents extra delimiters in the final string.
-        If Not IsEmpty(cell.Value) And Len(cell.Value) > 0 Then
+        If Not IsEmpty(cell.Value) And Len(CStr(cell.Value)) > 0 Then
             ' Append the join string if the result string is not empty.
             If Len(resultString) > 0 Then
                 resultString = resultString & joinString
@@ -176,3 +115,145 @@ Public Function LNF_Join(ByVal sourceRange As Range, ByVal joinString As String,
     LNF_Join = resultString
     
 End Function
+
+' ==============================================================================
+' FUNCTION: LNF_RegexExtract
+' Purpose:  Extracts a substring using Regular Expressions.
+' Note:     Uses Late Binding (CreateObject) to avoid reference issues.
+' ==============================================================================
+Public Function LNF_RegexExtract(ByVal sourceText As String, ByVal pattern As String, _
+                                 Optional ByVal ignoreCase As Boolean = True) As String
+Attribute LNF_RegexExtract.VB_Description = "Extracts the first substring matching a Regular Expression pattern."
+Attribute LNF_RegexExtract.VB_ProcData.VB_Invoke_Func = " \n20"
+    Dim regEx As Object
+    Dim matches As Object
+    
+    On Error Resume Next
+    Set regEx = CreateObject("VBScript.RegExp")
+    
+    With regEx
+        .Global = False      ' Return only the first match
+        .Multiline = False
+        .ignoreCase = ignoreCase
+        .pattern = pattern
+    End With
+    
+    If regEx.Test(sourceText) Then
+        Set matches = regEx.Execute(sourceText)
+        LNF_RegexExtract = matches(0).Value
+    Else
+        LNF_RegexExtract = ""
+    End If
+    On Error GoTo 0
+End Function
+
+' ==============================================================================
+' FUNCTION: LNF_ExtractNumber
+' Purpose:  Cleans a string to return only numeric values.
+'           Handles decimal points and leading negative signs.
+' ==============================================================================
+Public Function LNF_ExtractNumber(ByVal sourceText As String) As Double
+Attribute LNF_ExtractNumber.VB_Description = "Removes non-numeric characters from a string, keeping only digits, decimal points, and leading negative signs."
+Attribute LNF_ExtractNumber.VB_ProcData.VB_Invoke_Func = " \n20"
+    Dim i As Integer
+    Dim strResult As String
+    Dim char As String
+    Dim hasDecimal As Boolean
+    
+    strResult = ""
+    hasDecimal = False
+    
+    For i = 1 To Len(sourceText)
+        char = Mid(sourceText, i, 1)
+        
+        ' Allow digits
+        If IsNumeric(char) Then
+            strResult = strResult & char
+        
+        ' Allow one decimal point
+        ElseIf char = "." And Not hasDecimal Then
+            strResult = strResult & char
+            hasDecimal = True
+            
+        ' Allow negative sign only at the very beginning
+        ElseIf char = "-" And Len(strResult) = 0 Then
+            strResult = strResult & char
+        End If
+    Next i
+    
+    If Len(strResult) > 0 Then
+        LNF_ExtractNumber = Val(strResult)
+    Else
+        LNF_ExtractNumber = 0
+    End If
+End Function
+
+' ==============================================================================
+' FUNCTION: LNF_GetLastRow
+' Purpose:  Finds the last used row in a specific column.
+'           More reliable than UsedRange.
+' ==============================================================================
+Public Function LNF_GetLastRow(ByVal ws As Worksheet, Optional ByVal col As Variant = 1) As Long
+Attribute LNF_GetLastRow.VB_Description = "Returns the row number of the last non-empty cell in a specific column."
+Attribute LNF_GetLastRow.VB_ProcData.VB_Invoke_Func = " \n20"
+    On Error Resume Next
+    ' Equivalent to Ctrl+Up from the bottom of the sheet
+    LNF_GetLastRow = ws.Cells(ws.Rows.count, col).End(xlUp).Row
+    On Error GoTo 0
+End Function
+
+' ==============================================================================
+' FUNCTION: LNF_Exists
+' Purpose:  Checks if a value exists in a Range or Array.
+' ==============================================================================
+Public Function LNF_Exists(ByVal valueToFind As Variant, ByVal sourceContainer As Variant) As Boolean
+Attribute LNF_Exists.VB_Description = "Checks if a specific value exists within a Range or an Array."
+Attribute LNF_Exists.VB_ProcData.VB_Invoke_Func = " \n20"
+    Dim item As Variant
+    
+    LNF_Exists = False
+    
+    ' Case 1: Container is a Range object
+    If TypeName(sourceContainer) = "Range" Then
+        Dim rng As Range
+        ' LookAt:=xlWhole ensures exact match
+        Set rng = sourceContainer.Find(What:=valueToFind, LookIn:=xlValues, _
+                                       LookAt:=xlWhole, MatchCase:=False)
+        If Not rng Is Nothing Then LNF_Exists = True
+        
+    ' Case 2: Container is an Array
+    ElseIf IsArray(sourceContainer) Then
+        For Each item In sourceContainer
+            If CStr(item) = CStr(valueToFind) Then
+                LNF_Exists = True
+                Exit Function
+            End If
+        Next item
+    End If
+End Function
+
+' ==============================================================================
+' FUNCTION: LNF_VLookupNth
+' Purpose:  Performs a lookup but retrieves the N-th match.
+' ==============================================================================
+Public Function LNF_VLookupNth(ByVal lookupVal As Variant, ByVal searchRng As Range, _
+                               ByVal returnColOffset As Integer, ByVal matchIndex As Integer) As Variant
+Attribute LNF_VLookupNth.VB_Description = "Advanced VLookup that retrieves the N-th match instead of just the first one."
+Attribute LNF_VLookupNth.VB_ProcData.VB_Invoke_Func = " \n20"
+    Dim cell As Range
+    Dim count As Integer
+    
+    count = 0
+    LNF_VLookupNth = Empty ' Return empty if not found
+    
+    For Each cell In searchRng
+        If cell.Value = lookupVal Then
+            count = count + 1
+            If count = matchIndex Then
+                LNF_VLookupNth = cell.Offset(0, returnColOffset).Value
+                Exit Function
+            End If
+        End If
+    Next cell
+End Function
+
