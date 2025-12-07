@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_about"
-Attribute VB_Base = "0{817FE8E1-0CFA-47E4-87E2-A9E905057DDD}{E611F722-C076-40F5-AA35-02990847B0A3}"
+Attribute VB_Base = "0{9C33C3BD-02D4-4C8C-8476-85BCE954677D}{E611F722-C076-40F5-AA35-02990847B0A3}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -41,7 +41,7 @@ Private Sub UserForm_Initialize()
     
     ' --- 2. Version ---
     With Me.Controls.Add("Forms.Label.1", "lblVersion")
-        .Caption = "Version 1.0.0"
+        .Caption = "Version 1.0.1"
         .Left = MARGIN: .Top = currentTop: .Width = LABEL_W: .Height = 15
         .Font.Name = "Segoe UI"
         .Font.Size = 10
