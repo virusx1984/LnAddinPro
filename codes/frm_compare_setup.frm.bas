@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_compare_setup"
-Attribute VB_Base = "0{FC9FADC5-48DD-4DFB-BA2D-F579D0A3D294}{6F04D38A-C6B4-46D8-BE6F-42C2ADB30350}"
+Attribute VB_Base = "0{4B430C2B-4B64-498A-A83F-A818AA3708D1}{6F04D38A-C6B4-46D8-BE6F-42C2ADB30350}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -429,7 +429,7 @@ Private Sub btnSetFormat_Click()
     Next i
 End Sub
 
-' --- RUN HANDLER ---
+' --- RUN HANDLER (FIXED FOR FLAT HEADER FORMATTING) ---
 Private Sub btnRun_Click()
     Dim rngA As Range, rngB As Range, outputRng As Range
     Dim strIndex As String, strIgnore As String, strRef As String, strCompare As String
@@ -441,12 +441,12 @@ Private Sub btnRun_Click()
     Dim i As Long, status As String, colName As String, colFmt As String
     Dim dictFormats As Object: Set dictFormats = CreateObject("Scripting.Dictionary")
     
-    ' [NEW] Get Table Names
+    ' Get Table Names
     Dim name1 As String, name2 As String
     name1 = txtName1.Text
     name2 = txtName2.Text
-    If name1 = "" Then name1 = "Table1"
-    If name2 = "" Then name2 = "Table2"
+    If name1 = "" Then name1 = "T1"
+    If name2 = "" Then name2 = "T2"
     
     On Error Resume Next
     Set outputRng = Range(refOutput.Text)
@@ -463,6 +463,7 @@ Private Sub btnRun_Click()
         status = lstColumns.List(i, 1)
         colFmt = lstColumns.List(i, 2)
         
+        ' Record Format
         If Len(colFmt) > 0 And LCase(colFmt) <> "general" Then dictFormats.item(colName) = colFmt
         
         Select Case status
@@ -477,7 +478,6 @@ Private Sub btnRun_Click()
                 strRef = strRef & colName & ","
                 dictRefDirs.item(colName) = True
             Case "COMPARE"
-                ' Collect Compare columns explicitly to preserve order
                 strCompare = strCompare & colName & ","
         End Select
     Next i
@@ -491,15 +491,13 @@ Private Sub btnRun_Click()
     
     If IsEmpty(arrIndex) Or UBound(arrIndex) = -1 Then MsgBox "Select at least one INDEX column.", vbExclamation: Exit Sub
     
-    ' --- CALL MAIN FUNCTION ---
-    Dim resultData As Variant
+    ' --- CHECK FLAT HEADER OPTION ---
     Dim isFlat As Boolean
-    
-    ' Get Flat Header status from CheckBox
-    ' Ensure chkFlatHeader is accessible here
+    ' Ensure you have declared 'Public chkFlatHeader' or utilize Me.Controls check
     isFlat = chkFlatHeader.Value
     
-    ' [UPDATED] Pass the 'isFlat' boolean as the last argument
+    ' --- CALL MAIN FUNCTION ---
+    Dim resultData As Variant
     resultData = mod_funcs.CompareExcelRanges( _
         rngA, rngB, arrIndex, arrIgnore, arrRef, finalRefDirs, arrCompare, name1, name2, isFlat _
     )
@@ -518,25 +516,59 @@ Private Sub btnRun_Click()
         outputRng.Resize(rCount, cCount).Value = resultData
         outputRng.Resize(1, cCount).Font.Bold = True
         
-        ' APPLY FORMATTING
-        If dictFormats.count > 0 And rCount > 2 Then
+        ' ============================================================
+        ' [FIXED] APPLY FORMATTING LOGIC
+        ' ============================================================
+        If dictFormats.count > 0 Then
             Dim headerRng As Range, cell As Range
-            Set headerRng = outputRng.offset(1, 0).Resize(1, cCount)
-            For Each cell In headerRng.Cells
-                If dictFormats.Exists(cell.Value) Then
-                    cell.offset(1, 0).Resize(rCount - 2, 1).NumberFormat = dictFormats(cell.Value)
-                End If
-                Dim baseName As String
-                baseName = cell.Value
-                If InStr(baseName, "_T1") > 0 Then baseName = Replace(baseName, "_T1", "")
-                If InStr(baseName, "_T2") > 0 Then baseName = Replace(baseName, "_T2", "")
-                If InStr(baseName, "_Diff") > 0 Then baseName = Replace(baseName, "_Diff", "")
+            Dim headerRowIndex As Long
+            Dim dataRowCount As Long
+            
+            ' Determine Header Position and Data Height based on Flat mode
+            If isFlat Then
+                headerRowIndex = 0 ' Row 1 (Top)
+                dataRowCount = rCount - 1
+            Else
+                headerRowIndex = 1 ' Row 2 (Below Group Names)
+                dataRowCount = rCount - 2
+            End If
+            
+            If dataRowCount > 0 Then
+                Set headerRng = outputRng.offset(headerRowIndex, 0).Resize(1, cCount)
                 
-                If dictFormats.Exists(baseName) Then
-                     cell.offset(1, 0).Resize(rCount - 2, 1).NumberFormat = dictFormats(baseName)
-                End If
-            Next cell
+                For Each cell In headerRng.Cells
+                    Dim fmtKey As String
+                    fmtKey = cell.Value
+                    
+                    ' 1. Check Exact Match (Standard Mode usually hits this)
+                    If dictFormats.Exists(fmtKey) Then
+                        cell.offset(1, 0).Resize(dataRowCount, 1).NumberFormat = dictFormats(fmtKey)
+                    Else
+                        ' 2. Check Prefix Match (For Flat Mode: "T1_Price" -> "Price")
+                        ' Prefixes to strip: Name1_, Name2_, Diff_
+                        Dim prefixes As Variant
+                        prefixes = Array(name1 & "_", name2 & "_", "Diff_")
+                        
+                        Dim p As Variant
+                        For Each p In prefixes
+                            ' Check if cell starts with Prefix (Case Insensitive)
+                            If InStr(1, fmtKey, p, vbTextCompare) = 1 Then
+                                ' Strip prefix to get original column name
+                                fmtKey = Mid(fmtKey, Len(p) + 1)
+                                Exit For
+                            End If
+                        Next p
+                        
+                        ' Re-check with stripped name
+                        If dictFormats.Exists(fmtKey) Then
+                             cell.offset(1, 0).Resize(dataRowCount, 1).NumberFormat = dictFormats(fmtKey)
+                        End If
+                    End If
+                Next cell
+            End If
         End If
+        ' ============================================================
+        
         MsgBox "Comparison Complete!", vbInformation
         Unload Me
     Else
