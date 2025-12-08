@@ -249,7 +249,7 @@ End Function
 
 
 
-' mod_funcs Code
+
 ' Purpose: Compares two Excel data ranges based on specified column categories.
 ' UPDATED: Accepts custom Table Names for the output header.
 Public Function CompareExcelRanges( _
@@ -261,7 +261,8 @@ Public Function CompareExcelRanges( _
     Optional ByVal referenceColDirections As Variant, _
     Optional ByVal explicitCompareCols As Variant, _
     Optional ByVal tableName1 As String = "Table1", _
-    Optional ByVal tableName2 As String = "Table2" _
+    Optional ByVal tableName2 As String = "Table2", _
+    Optional ByVal flattenHeader As Boolean = False _
 ) As Variant
 
     ' --- Variable Declarations ---
@@ -567,7 +568,7 @@ CheckIgnore:
 NextKey:
     Next key
     
-    ' --- 6. Assemble Output ---
+    ' --- 6. Assemble Output (FIXED) ---
     If resultCollection.count = 0 Then
         CompareExcelRanges = Array(Array("Success: No differences found."))
         Exit Function
@@ -577,31 +578,92 @@ NextKey:
     totalOutputCols = 1 + indexColIndexes.count + refColIndexes.count + (compareColIndexes.count * 3)
     
     Dim arrResult() As Variant
-    ReDim arrResult(1 To resultCollection.count + 2, 1 To totalOutputCols)
+    Dim headerRows As Long
     
-    ' Header Row A (Top Level) - [UPDATED TO USE CUSTOM NAMES]
-    Dim outputRow As Long: outputRow = 1
-    Dim colIndex As Long: colIndex = 1
+    ' Determine number of header rows based on user preference
+    If flattenHeader Then
+        headerRows = 1
+    Else
+        headerRows = 2
+    End If
     
-    arrResult(outputRow, colIndex) = "": colIndex = colIndex + 1
-    For i = 1 To indexColIndexes.count: arrResult(outputRow, colIndex) = "": colIndex = colIndex + 1: Next
-    For i = 1 To refColIndexes.count: arrResult(outputRow, colIndex) = "Ref": colIndex = colIndex + 1: Next
-    For i = 1 To compareColIndexes.count: arrResult(outputRow, colIndex) = tableName1: colIndex = colIndex + 1: Next
-    For i = 1 To compareColIndexes.count: arrResult(outputRow, colIndex) = tableName2: colIndex = colIndex + 1: Next
-    For i = 1 To compareColIndexes.count: arrResult(outputRow, colIndex) = "Diff": colIndex = colIndex + 1: Next
+    ' Resize result array to fit headers + data
+    ReDim arrResult(1 To resultCollection.count + headerRows, 1 To totalOutputCols)
     
-    ' Header Row B (Column Names)
-    outputRow = 2
-    colIndex = 1
-    arrResult(outputRow, colIndex) = "Status": colIndex = colIndex + 1
-    For Each colName In indexColIndexes.Keys: arrResult(outputRow, colIndex) = colName: colIndex = colIndex + 1: Next
-    For Each colName In refColIndexes.Keys: arrResult(outputRow, colIndex) = colName: colIndex = colIndex + 1: Next
-    For Each compHeader In compareColIndexes.Keys: arrResult(outputRow, colIndex) = compHeader: colIndex = colIndex + 1: Next
-    For Each compHeader In compareColIndexes.Keys: arrResult(outputRow, colIndex) = compHeader: colIndex = colIndex + 1: Next
-    For Each compHeader In compareColIndexes.Keys: arrResult(outputRow, colIndex) = compHeader: colIndex = colIndex + 1: Next
+    Dim outputRow As Long
+    Dim colIndex As Long
+    ' [DELETED] Dim colName As Variant   <-- Caused Error: Already declared at top
+    ' [DELETED] Dim compHeader As Variant <-- Caused Error: Already declared at top
     
-    ' Data Rows
-    outputRow = 3
+    If flattenHeader Then
+        ' === FLAT HEADER LOGIC (1 ROW) ===
+        ' Merges TableName and ColumnName using underscore (e.g., T1_Price)
+        outputRow = 1
+        colIndex = 1
+        
+        ' 1. Status Column
+        arrResult(outputRow, colIndex) = "Status": colIndex = colIndex + 1
+        
+        ' 2. Index Columns
+        For Each colName In indexColIndexes.Keys
+            arrResult(outputRow, colIndex) = colName
+            colIndex = colIndex + 1
+        Next
+        
+        ' 3. Reference Columns
+        For Each colName In refColIndexes.Keys
+            arrResult(outputRow, colIndex) = colName & "_Ref"
+            colIndex = colIndex + 1
+        Next
+        
+        ' 4. Compare Columns (Flattened)
+        ' Group 1: Table 1 Values
+        For Each compHeader In compareColIndexes.Keys
+            arrResult(outputRow, colIndex) = tableName1 & "_" & compHeader
+            colIndex = colIndex + 1
+        Next
+        ' Group 2: Table 2 Values
+        For Each compHeader In compareColIndexes.Keys
+            arrResult(outputRow, colIndex) = tableName2 & "_" & compHeader
+            colIndex = colIndex + 1
+        Next
+        ' Group 3: Difference Values
+        For Each compHeader In compareColIndexes.Keys
+            arrResult(outputRow, colIndex) = "Diff_" & compHeader
+            colIndex = colIndex + 1
+        Next
+        
+    Else
+        ' === STANDARD LOGIC (2 ROWS) ===
+        ' Row 1: Group Names (Table1, Table2, Diff)
+        ' Row 2: Column Names
+        
+        ' Header Row A (Top Level)
+        outputRow = 1
+        colIndex = 1
+        
+        arrResult(outputRow, colIndex) = "": colIndex = colIndex + 1
+        For i = 1 To indexColIndexes.count: arrResult(outputRow, colIndex) = "": colIndex = colIndex + 1: Next
+        For i = 1 To refColIndexes.count: arrResult(outputRow, colIndex) = "Ref": colIndex = colIndex + 1: Next
+        For i = 1 To compareColIndexes.count: arrResult(outputRow, colIndex) = tableName1: colIndex = colIndex + 1: Next
+        For i = 1 To compareColIndexes.count: arrResult(outputRow, colIndex) = tableName2: colIndex = colIndex + 1: Next
+        For i = 1 To compareColIndexes.count: arrResult(outputRow, colIndex) = "Diff": colIndex = colIndex + 1: Next
+        
+        ' Header Row B (Column Names)
+        outputRow = 2
+        colIndex = 1
+        arrResult(outputRow, colIndex) = "Status": colIndex = colIndex + 1
+        For Each colName In indexColIndexes.Keys: arrResult(outputRow, colIndex) = colName: colIndex = colIndex + 1: Next
+        For Each colName In refColIndexes.Keys: arrResult(outputRow, colIndex) = colName: colIndex = colIndex + 1: Next
+        For Each compHeader In compareColIndexes.Keys: arrResult(outputRow, colIndex) = compHeader: colIndex = colIndex + 1: Next
+        For Each compHeader In compareColIndexes.Keys: arrResult(outputRow, colIndex) = compHeader: colIndex = colIndex + 1: Next
+        For Each compHeader In compareColIndexes.Keys: arrResult(outputRow, colIndex) = compHeader: colIndex = colIndex + 1: Next
+    End If
+    
+    ' === Data Rows ===
+    ' Start outputting data after the header rows
+    outputRow = headerRows + 1
+    
     Dim dataArray As Variant
     For Each dataArray In resultCollection
         colIndex = 1
