@@ -249,25 +249,17 @@ End Function
 
 
 
+' mod_funcs Code
 ' Purpose: Compares two Excel data ranges (Table 1 and Table 2) based on specified column categories.
-'
-' @param rng1 (Range): REQUIRED. The first data range (Table 1).
-' @param rng2 (Range): REQUIRED. The second data range (Table 2).
-' @param indexCols (Variant): REQUIRED. A 1D Array of column names (Strings) acting as unique keys.
-' @param ignoreCols (Variant): OPTIONAL. A 1D Array of column names to ignore. Defaults to Empty.
-' @param referenceCols (Variant): OPTIONAL. A 1D Array of reference column names. Defaults to Empty.
-' @param referenceColDirections (Variant): OPTIONAL. A Dictionary determining fill priority for Ref cols.
-'                                          - Dictionary: Key=ColName, Value=Boolean.
-'                                          - Empty/Missing: Defaults to True (Prioritize Table 2).
-'
-' @return (Variant): A two-dimensional array containing the comparison results.
+' UPDATED: Respects custom column ordering via arrays.
 Public Function CompareExcelRanges( _
     ByVal rng1 As Range, _
     ByVal rng2 As Range, _
     ByVal indexCols As Variant, _
     Optional ByVal ignoreCols As Variant, _
     Optional ByVal referenceCols As Variant, _
-    Optional ByVal referenceColDirections As Variant _
+    Optional ByVal referenceColDirections As Variant, _
+    Optional ByVal explicitCompareCols As Variant _
 ) As Variant
 
     ' --- Variable Declarations ---
@@ -287,6 +279,7 @@ Public Function CompareExcelRanges( _
     Dim arrIndex() As String
     Dim arrIgnore() As String
     Dim arrRef() As String
+    Dim arrComp() As String ' New array for explicitly passed compare columns
     
     ' Collection
     Dim resultCollection As Collection
@@ -297,7 +290,7 @@ Public Function CompareExcelRanges( _
     Dim colName As Variant
     Dim arrTemp As Variant
     
-    ' Direction Logic Variable (Dictionary Object or Nothing)
+    ' Direction Logic Variable
     Dim actualRefDirs As Object
     
     ' Initialization
@@ -316,7 +309,7 @@ Public Function CompareExcelRanges( _
     ' 1a. Validate indexCols (Required)
     If Not VBA.IsArray(indexCols) Then
         If IsEmpty(indexCols) Or CStr(indexCols) = "" Then GoTo IndexErr
-        CompareExcelRanges = Array(Array("Error: indexCols must be passed as an Array (e.g., Array(""col1"", ""col2""))."))
+        CompareExcelRanges = Array(Array("Error: indexCols must be passed as an Array."))
         Exit Function
     End If
     arrTemp = indexCols
@@ -329,7 +322,7 @@ IndexErr:
     Exit Function
 
 CheckIgnore:
-    ' 1b. Handle ignoreCols (Optional)
+    ' 1b. Handle ignoreCols
     If IsMissing(ignoreCols) Or Not VBA.IsArray(ignoreCols) Then
         arrIgnore = Split(vbNullString)
     Else
@@ -338,7 +331,7 @@ CheckIgnore:
         For i = LBound(arrTemp) To UBound(arrTemp): arrIgnore(i) = Trim(CStr(arrTemp(i))): Next i
     End If
 
-    ' 1c. Handle referenceCols (Optional)
+    ' 1c. Handle referenceCols
     If IsMissing(referenceCols) Or Not VBA.IsArray(referenceCols) Then
         arrRef = Split(vbNullString)
     Else
@@ -347,12 +340,22 @@ CheckIgnore:
         For i = LBound(arrTemp) To UBound(arrTemp): arrRef(i) = Trim(CStr(arrTemp(i))): Next i
     End If
 
-    ' 1d. Handle referenceColDirections (Optional)
+    ' 1d. Handle referenceColDirections
     Set actualRefDirs = Nothing
-    
     If Not IsMissing(referenceColDirections) Then
-        If IsObject(referenceColDirections) Then
-            Set actualRefDirs = referenceColDirections
+        If IsObject(referenceColDirections) Then Set actualRefDirs = referenceColDirections
+    End If
+    
+    ' 1e. [NEW] Handle explicitCompareCols
+    Dim useExplicitCompare As Boolean: useExplicitCompare = False
+    If Not IsMissing(explicitCompareCols) Then
+        If VBA.IsArray(explicitCompareCols) Then
+            arrTemp = explicitCompareCols
+            If UBound(arrTemp) >= LBound(arrTemp) Then
+                ReDim arrComp(LBound(arrTemp) To UBound(arrTemp))
+                For i = LBound(arrTemp) To UBound(arrTemp): arrComp(i) = Trim(CStr(arrTemp(i))): Next i
+                useExplicitCompare = True
+            End If
         End If
     End If
 
@@ -372,65 +375,84 @@ CheckIgnore:
             CompareExcelRanges = Array(Array("Error: Column headers do not match in name or order."))
             Exit Function
         End If
+        ' Build Map: Header Name -> Column Index
         dictHeaders.Add LCase(Trim(CStr(header1(1, i)))), i
     Next i
     
-    ' --- 3. Parameter Validation & Column Categorization ---
-    Dim checkArrays As Variant
-    checkArrays = Array(Array("Index", arrIndex, indexColIndexes), Array("Reference", arrRef, refColIndexes))
+    ' --- 3. Parameter Validation & Column Categorization (UPDATED FOR ORDERING) ---
+    ' Instead of looping 1..colCount, we loop the ARRAYS to preserve UserForm order.
     
-    Dim checkArr As Variant
-    For Each checkArr In checkArrays
-        Dim arrType As String: arrType = checkArr(0)
-        Dim arrData() As String: arrData = checkArr(1)
-        Dim dictTarget As Object: Set dictTarget = checkArr(2)
-        
-        If (UBound(arrData) - LBound(arrData) + 1) > 0 Then
-            For i = LBound(arrData) To UBound(arrData)
-                colName = Trim(arrData(i))
-                If colName <> "" Then
-                    If Not dictHeaders.Exists(LCase(colName)) Then
-                        CompareExcelRanges = Array(Array("Error: " & arrType & " column '" & colName & "' not found in headers."))
-                        Exit Function
-                    End If
-                    If Not dictTarget.Exists(colName) Then
-                        dictTarget.Add colName, dictHeaders(LCase(colName))
-                    End If
-                End If
-            Next i
+    ' 3a. Index Columns
+    For i = LBound(arrIndex) To UBound(arrIndex)
+        colName = arrIndex(i)
+        If dictHeaders.Exists(LCase(colName)) Then
+            If Not indexColIndexes.Exists(colName) Then
+                indexColIndexes.Add colName, dictHeaders(LCase(colName))
+            End If
+        Else
+            CompareExcelRanges = Array(Array("Error: Index column '" & colName & "' not found."))
+            Exit Function
         End If
-    Next
+    Next i
+    
+    ' 3b. Reference Columns
+    If (UBound(arrRef) - LBound(arrRef) + 1) > 0 Then
+        For i = LBound(arrRef) To UBound(arrRef)
+            colName = arrRef(i)
+            If dictHeaders.Exists(LCase(colName)) Then
+                If Not refColIndexes.Exists(colName) Then
+                    refColIndexes.Add colName, dictHeaders(LCase(colName))
+                End If
+            End If
+        Next i
+    End If
     
     ' Overlap check
     For Each compHeader In indexColIndexes.Keys
         If refColIndexes.Exists(compHeader) Then
-            CompareExcelRanges = Array(Array("Error: Column '" & compHeader & "' is assigned to both Index and Reference categories."))
+            CompareExcelRanges = Array(Array("Error: Column '" & compHeader & "' is in both Index and Ref."))
             Exit Function
         End If
     Next
     
-    ' Build Compare Indexes
-    For i = 1 To colCount
-        Dim currentHeader As String: currentHeader = Trim(CStr(header1(1, i)))
-        Dim lowerHeader As String: lowerHeader = LCase(currentHeader)
-        
-        Dim isIndex As Boolean: isIndex = indexColIndexes.Exists(currentHeader)
-        Dim isRef As Boolean: isRef = refColIndexes.Exists(currentHeader)
-        Dim isIgnore As Boolean: isIgnore = False
-        
-        If (UBound(arrIgnore) - LBound(arrIgnore) + 1) > 0 Then
-            For Each colName In arrIgnore
-                If StrComp(lowerHeader, LCase(Trim(CStr(colName))), vbTextCompare) = 0 Then
-                    isIgnore = True
-                    Exit For
+    ' 3c. Compare Columns
+    ' Logic: If explicit array passed (from UserForm ordered list), use that.
+    '        If not, use fallback logic (exclude Index/Ref/Ignore).
+    
+    If useExplicitCompare Then
+        ' Method A: Use Passed Order
+        For i = LBound(arrComp) To UBound(arrComp)
+            colName = arrComp(i)
+            If dictHeaders.Exists(LCase(colName)) Then
+                If Not compareColIndexes.Exists(colName) Then
+                    compareColIndexes.Add colName, dictHeaders(LCase(colName))
                 End If
-            Next
-        End If
-        
-        If Not isIndex And Not isRef And Not isIgnore Then
-            compareColIndexes.Add currentHeader, i
-        End If
-    Next i
+            End If
+        Next i
+    Else
+        ' Method B: Fallback (Original logic)
+        For i = 1 To colCount
+            Dim currentHeader As String: currentHeader = Trim(CStr(header1(1, i)))
+            Dim lowerHeader As String: lowerHeader = LCase(currentHeader)
+            
+            Dim isIndex As Boolean: isIndex = indexColIndexes.Exists(currentHeader)
+            Dim isRef As Boolean: isRef = refColIndexes.Exists(currentHeader)
+            Dim isIgnore As Boolean: isIgnore = False
+            
+            If (UBound(arrIgnore) - LBound(arrIgnore) + 1) > 0 Then
+                For Each colName In arrIgnore
+                    If StrComp(lowerHeader, LCase(Trim(CStr(colName))), vbTextCompare) = 0 Then
+                        isIgnore = True
+                        Exit For
+                    End If
+                Next
+            End If
+            
+            If Not isIndex And Not isRef And Not isIgnore Then
+                compareColIndexes.Add currentHeader, i
+            End If
+        Next i
+    End If
     
     ' --- 4. Build Dictionaries from Ranges ---
     Call PopulateDictionary(rng1, indexColIndexes, dictT1)
@@ -519,7 +541,7 @@ CheckIgnore:
             rowResult.Add compHeader & "_Ref", refVal
         Next
         
-        ' 2d. Comparison Columns (UPDATED: Fill Zero for missing rows)
+        ' 2d. Comparison Columns
         Dim t1Values As Object: Set t1Values = CreateObject("Scripting.Dictionary")
         Dim t2Values As Object: Set t2Values = CreateObject("Scripting.Dictionary")
         Dim diffValues As Object: Set diffValues = CreateObject("Scripting.Dictionary")
@@ -527,44 +549,22 @@ CheckIgnore:
         For Each compHeader In compareColIndexes.Keys
             i = compareColIndexes.item(compHeader)
             
-            ' --- MODIFIED LOGIC START ---
-            ' If the table is present, use its value. If NOT present (missing row), fill with 0.
             Dim val1 As Variant
-            If isT1Present Then
-                val1 = valuesT1(i)
-                ' Optional: If you also want empty cells in existing rows to be treated as 0, uncomment below:
-                ' If IsEmpty(val1) Or CStr(val1) = "" Then val1 = 0
-            Else
-                val1 = 0
-            End If
+            If isT1Present Then val1 = valuesT1(i) Else val1 = 0
             
             Dim val2 As Variant
-            If isT2Present Then
-                val2 = valuesT2(i)
-                ' Optional: If you also want empty cells in existing rows to be treated as 0, uncomment below:
-                ' If IsEmpty(val2) Or CStr(val2) = "" Then val2 = 0
-            Else
-                val2 = 0
-            End If
+            If isT2Present Then val2 = valuesT2(i) Else val2 = 0
             
             Dim diffVal As Variant: diffVal = ""
-            
-            ' Calculate Difference
-            ' Since missing rows are now 0, we can use simple subtraction as long as both are numeric.
             If IsNumeric(val1) And IsNumeric(val2) Then
                 diffVal = CDbl(val2) - CDbl(val1)
-            Else
-                ' If one is text and the other is 0 (or text), we cannot calculate a numeric difference.
-                ' Leaving diffVal as empty string ""
             End If
-            ' --- MODIFIED LOGIC END ---
             
             t1Values.Add compHeader, val1
             t2Values.Add compHeader, val2
             diffValues.Add compHeader, diffVal
         Next
         
-        ' 2e. Populate Result
         For Each compHeader In t1Values.Keys: rowResult.Add compHeader & "_T1", t1Values.item(compHeader): Next
         For Each compHeader In t2Values.Keys: rowResult.Add compHeader & "_T2", t2Values.item(compHeader): Next
         For Each compHeader In diffValues.Keys: rowResult.Add compHeader & "_Diff", diffValues.item(compHeader): Next
@@ -626,7 +626,7 @@ ErrorHandler:
     CompareExcelRanges = Array(Array("Error: Unexpected runtime error. Number: " & Err.Number & ", Description: " & Err.Description))
 End Function
 
-' --- PopulateDictionary Helper (Remains unchanged) ---
+' --- Helper for Dictionary Population (Must accompany main function) ---
 Private Sub PopulateDictionary(ByVal rng As Range, ByVal indexCols As Object, ByRef targetDict As Object)
     Dim dataRange As Range
     Dim dataArray As Variant
@@ -637,7 +637,7 @@ Private Sub PopulateDictionary(ByVal rng As Range, ByVal indexCols As Object, By
     Dim newValues() As Variant
     Dim arrayColCount As Long
     
-    Set dataRange = rng.Offset(1, 0).Resize(rng.Rows.count - 1, rng.Columns.count)
+    Set dataRange = rng.offset(1, 0).Resize(rng.Rows.count - 1, rng.Columns.count)
     If dataRange.Rows.count = 0 Then Exit Sub
     
     dataArray = dataRange.Value

@@ -250,7 +250,7 @@ Attribute LNF_VLookupNth.VB_ProcData.VB_Invoke_Func = " \n20"
         If cell.Value = lookupVal Then
             count = count + 1
             If count = matchIndex Then
-                LNF_VLookupNth = cell.Offset(0, returnColOffset).Value
+                LNF_VLookupNth = cell.offset(0, returnColOffset).Value
                 Exit Function
             End If
         End If
