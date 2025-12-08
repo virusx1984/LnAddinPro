@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_compare_setup"
-Attribute VB_Base = "0{D3B8D26B-ABCC-4A41-BBE0-AF420EDCA149}{6F04D38A-C6B4-46D8-BE6F-42C2ADB30350}"
+Attribute VB_Base = "0{1D013DEC-17B9-41FE-9EB2-8EB2B8C383FD}{6F04D38A-C6B4-46D8-BE6F-42C2ADB30350}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -390,6 +390,13 @@ Private Sub btnRun_Click()
     Dim i As Long, status As String, colName As String, colFmt As String
     Dim dictFormats As Object: Set dictFormats = CreateObject("Scripting.Dictionary")
     
+    ' [NEW] Get Table Names
+    Dim name1 As String, name2 As String
+    name1 = txtName1.Text
+    name2 = txtName2.Text
+    If name1 = "" Then name1 = "Table1"
+    If name2 = "" Then name2 = "Table2"
+    
     On Error Resume Next
     Set outputRng = Range(refOutput.Text)
     Set rngA = Range(refRange1.Text)
@@ -419,7 +426,7 @@ Private Sub btnRun_Click()
                 strRef = strRef & colName & ","
                 dictRefDirs.item(colName) = True
             Case "COMPARE"
-                ' [NEW] Collect Compare columns explicitly to preserve order
+                ' Collect Compare columns explicitly to preserve order
                 strCompare = strCompare & colName & ","
         End Select
     Next i
@@ -427,7 +434,6 @@ Private Sub btnRun_Click()
     arrIndex = StringToArray(strIndex)
     arrIgnore = StringToArray(strIgnore)
     arrRef = StringToArray(strRef)
-    ' [NEW] Convert Compare String to Array
     arrCompare = StringToArray(strCompare)
     
     If dictRefDirs.count > 0 Then Set finalRefDirs = dictRefDirs Else finalRefDirs = Empty
@@ -436,9 +442,9 @@ Private Sub btnRun_Click()
     
     ' --- CALL MAIN FUNCTION ---
     Dim resultData As Variant
-    ' [UPDATED] Pass arrCompare as the new optional argument
+    ' [UPDATED] Pass table names as the last two arguments
     resultData = mod_funcs.CompareExcelRanges( _
-        rngA, rngB, arrIndex, arrIgnore, arrRef, finalRefDirs, arrCompare _
+        rngA, rngB, arrIndex, arrIgnore, arrRef, finalRefDirs, arrCompare, name1, name2 _
     )
     
     ' --- OUTPUT RESULTS ---

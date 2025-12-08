@@ -250,8 +250,8 @@ End Function
 
 
 ' mod_funcs Code
-' Purpose: Compares two Excel data ranges (Table 1 and Table 2) based on specified column categories.
-' UPDATED: Respects custom column ordering via arrays.
+' Purpose: Compares two Excel data ranges based on specified column categories.
+' UPDATED: Accepts custom Table Names for the output header.
 Public Function CompareExcelRanges( _
     ByVal rng1 As Range, _
     ByVal rng2 As Range, _
@@ -259,7 +259,9 @@ Public Function CompareExcelRanges( _
     Optional ByVal ignoreCols As Variant, _
     Optional ByVal referenceCols As Variant, _
     Optional ByVal referenceColDirections As Variant, _
-    Optional ByVal explicitCompareCols As Variant _
+    Optional ByVal explicitCompareCols As Variant, _
+    Optional ByVal tableName1 As String = "Table1", _
+    Optional ByVal tableName2 As String = "Table2" _
 ) As Variant
 
     ' --- Variable Declarations ---
@@ -279,7 +281,7 @@ Public Function CompareExcelRanges( _
     Dim arrIndex() As String
     Dim arrIgnore() As String
     Dim arrRef() As String
-    Dim arrComp() As String ' New array for explicitly passed compare columns
+    Dim arrComp() As String
     
     ' Collection
     Dim resultCollection As Collection
@@ -346,7 +348,7 @@ CheckIgnore:
         If IsObject(referenceColDirections) Then Set actualRefDirs = referenceColDirections
     End If
     
-    ' 1e. [NEW] Handle explicitCompareCols
+    ' 1e. Handle explicitCompareCols
     Dim useExplicitCompare As Boolean: useExplicitCompare = False
     If Not IsMissing(explicitCompareCols) Then
         If VBA.IsArray(explicitCompareCols) Then
@@ -375,12 +377,10 @@ CheckIgnore:
             CompareExcelRanges = Array(Array("Error: Column headers do not match in name or order."))
             Exit Function
         End If
-        ' Build Map: Header Name -> Column Index
         dictHeaders.Add LCase(Trim(CStr(header1(1, i)))), i
     Next i
     
-    ' --- 3. Parameter Validation & Column Categorization (UPDATED FOR ORDERING) ---
-    ' Instead of looping 1..colCount, we loop the ARRAYS to preserve UserForm order.
+    ' --- 3. Parameter Validation & Column Categorization ---
     
     ' 3a. Index Columns
     For i = LBound(arrIndex) To UBound(arrIndex)
@@ -416,11 +416,7 @@ CheckIgnore:
     Next
     
     ' 3c. Compare Columns
-    ' Logic: If explicit array passed (from UserForm ordered list), use that.
-    '        If not, use fallback logic (exclude Index/Ref/Ignore).
-    
     If useExplicitCompare Then
-        ' Method A: Use Passed Order
         For i = LBound(arrComp) To UBound(arrComp)
             colName = arrComp(i)
             If dictHeaders.Exists(LCase(colName)) Then
@@ -430,7 +426,6 @@ CheckIgnore:
             End If
         Next i
     Else
-        ' Method B: Fallback (Original logic)
         For i = 1 To colCount
             Dim currentHeader As String: currentHeader = Trim(CStr(header1(1, i)))
             Dim lowerHeader As String: lowerHeader = LCase(currentHeader)
@@ -492,11 +487,11 @@ CheckIgnore:
 
         ' Set Status
         If isT1Present And isT2Present Then
-            status = "both"
+            status = "Both"
         ElseIf isT1Present Then
-            status = "left_only"
+            status = "Left Only"
         ElseIf isT2Present Then
-            status = "right_only"
+            status = "Right Only"
         End If
         
         If Not hasDiff And (isT1Present And isT2Present) Then GoTo NextKey
@@ -521,8 +516,7 @@ CheckIgnore:
             Dim refT2 As Variant: If isT2Present Then refT2 = valuesT2(i) Else refT2 = Empty
             Dim refT1 As Variant: If isT1Present Then refT1 = valuesT1(i) Else refT1 = Empty
             
-            Dim prioritizeT2 As Boolean
-            prioritizeT2 = True
+            Dim prioritizeT2 As Boolean: prioritizeT2 = True
             
             If Not actualRefDirs Is Nothing Then
                 If actualRefDirs.Exists(compHeader) Then
@@ -585,18 +579,18 @@ NextKey:
     Dim arrResult() As Variant
     ReDim arrResult(1 To resultCollection.count + 2, 1 To totalOutputCols)
     
-    ' Header Row A
+    ' Header Row A (Top Level) - [UPDATED TO USE CUSTOM NAMES]
     Dim outputRow As Long: outputRow = 1
     Dim colIndex As Long: colIndex = 1
     
     arrResult(outputRow, colIndex) = "": colIndex = colIndex + 1
     For i = 1 To indexColIndexes.count: arrResult(outputRow, colIndex) = "": colIndex = colIndex + 1: Next
     For i = 1 To refColIndexes.count: arrResult(outputRow, colIndex) = "Ref": colIndex = colIndex + 1: Next
-    For i = 1 To compareColIndexes.count: arrResult(outputRow, colIndex) = "table1": colIndex = colIndex + 1: Next
-    For i = 1 To compareColIndexes.count: arrResult(outputRow, colIndex) = "table2": colIndex = colIndex + 1: Next
-    For i = 1 To compareColIndexes.count: arrResult(outputRow, colIndex) = "diff": colIndex = colIndex + 1: Next
+    For i = 1 To compareColIndexes.count: arrResult(outputRow, colIndex) = tableName1: colIndex = colIndex + 1: Next
+    For i = 1 To compareColIndexes.count: arrResult(outputRow, colIndex) = tableName2: colIndex = colIndex + 1: Next
+    For i = 1 To compareColIndexes.count: arrResult(outputRow, colIndex) = "Diff": colIndex = colIndex + 1: Next
     
-    ' Header Row B
+    ' Header Row B (Column Names)
     outputRow = 2
     colIndex = 1
     arrResult(outputRow, colIndex) = "Status": colIndex = colIndex + 1
