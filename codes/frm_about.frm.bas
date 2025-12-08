@@ -41,7 +41,7 @@ Private Sub UserForm_Initialize()
     
     ' --- 2. Version ---
     With Me.Controls.Add("Forms.Label.1", "lblVersion")
-        .Caption = "Version 1.0.1"
+        .Caption = "Version 1.0.2"
         .Left = MARGIN: .Top = currentTop: .Width = LABEL_W: .Height = 15
         .Font.Name = "Segoe UI"
         .Font.Size = 10
