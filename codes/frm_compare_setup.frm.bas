@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_compare_setup"
-Attribute VB_Base = "0{722543CA-3C56-4DFF-9CE6-E59B5706E6F7}{6BEEADB5-5256-42B3-ACAB-9CDE04E71847}"
+Attribute VB_Base = "0{623A7190-484A-4A0F-BECD-A95D0C0C6B46}{6BEEADB5-5256-42B3-ACAB-9CDE04E71847}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -19,6 +19,8 @@ Public WithEvents btnValidate As MSForms.CommandButton
 Attribute btnValidate.VB_VarHelpID = -1
 Public WithEvents btnReset As MSForms.CommandButton
 Attribute btnReset.VB_VarHelpID = -1
+Public WithEvents chkNewSheet As MSForms.CheckBox
+Attribute chkNewSheet.VB_VarHelpID = -1
 
 ' Config Role Buttons
 Public WithEvents btnSetIndex As MSForms.CommandButton
@@ -54,6 +56,7 @@ Public txtName2 As Object
 Public refOutput As Object
 Public lstColumns As MSForms.ListBox
 Public frameConfig As MSForms.Frame
+Public txtNewSheetName As MSForms.TextBox
 
 ' [NEW] Checkboxes
 Public chkUseSheetNames As MSForms.CheckBox
@@ -66,6 +69,25 @@ Const GAP As Long = 5
 Const LBL_W As Long = 80
 Const INPUT_W As Long = 180
 
+' --- EVENT: Toggle Output Options ---
+Private Sub chkNewSheet_Click()
+    ' [FIX] Error 91 Prevention:
+    ' During UserForm_Initialize, this event might trigger when setting .Value = True.
+    ' At that specific moment, txtNewSheetName might not be created yet.
+    ' We must check if the object exists before accessing its properties.
+    If txtNewSheetName Is Nothing Or refOutput Is Nothing Then Exit Sub
+
+    Dim isNewSheet As Boolean
+    isNewSheet = chkNewSheet.Value
+    
+    ' 1. Enable/Disable Name TextBox
+    txtNewSheetName.Enabled = isNewSheet
+    txtNewSheetName.BackColor = IIf(isNewSheet, &HFFFFFF, &HCCCCCC) ' White if True, Grey if False
+    
+    ' 2. Enable/Disable RefEdit
+    refOutput.Enabled = Not isNewSheet
+End Sub
+
 ' ==============================================================================
 ' SUB: UserForm_Initialize
 ' Purpose: Builds the UI dynamically and pre-fills data based on selection.
@@ -74,249 +96,174 @@ Private Sub UserForm_Initialize()
     
     Me.Caption = "Compare Setup (Complete)"
     Me.Width = 550
-    Me.Height = 600 ' Increased height to accommodate new checkboxes
+    Me.Height = 620 ' Increased height for new output options
     
     Dim currentTop As Long: currentTop = MARGIN
     
     ' ============================
-    ' PRE-CHECK SELECTION (Get Addresses & Sheet)
+    ' PRE-CHECK SELECTION
     ' ============================
-    Dim addr1 As String
-    Dim addr2 As String
-    Dim selSheetName As String
-    
-    ' Check current selection
+    Dim addr1 As String, addr2 As String, selSheetName As String
     If TypeName(Selection) = "Range" Then
-        ' Get sheet name safely (add single quotes for spaces)
         selSheetName = "'" & Selection.Parent.Name & "'!"
-        
-        If Selection.Areas.count >= 1 Then
-            addr1 = selSheetName & Selection.Areas(1).Address(External:=False)
-        End If
-        
-        If Selection.Areas.count >= 2 Then
-            addr2 = selSheetName & Selection.Areas(2).Address(External:=False)
-        End If
+        If Selection.Areas.count >= 1 Then addr1 = selSheetName & Selection.Areas(1).Address(External:=False)
+        If Selection.Areas.count >= 2 Then addr2 = selSheetName & Selection.Areas(2).Address(External:=False)
     End If
     
-    ' ============================
-    ' SECTION 1: RANGE SELECTION
-    ' ============================
+    ' ... (SECTION 1: RANGE A & B - Code remains the same) ...
+    ' (Please paste your existing Section 1 code here to keep it concise)
     
-    ' --- Range A ---
+    ' --- Placeholder for Section 1 Code ---
+    ' Range A Controls...
+    ' Range B Controls...
+    ' Auto-Use Sheet Names Checkbox...
+    ' Validate Buttons...
+    
+    ' [Assuming Section 1 ends around 150px top]
+    ' Recalculate Top just to be safe or use your existing flow
+    ' For this snippet, I will reconstruct from Section 2 Frame
+    
+    ' ============================
+    ' RECONSTRUCTING FROM SECTION 1 END
+    ' ============================
+    ' (Add Section 1 code back here if you are copying the whole sub)
+    ' Let's assume currentTop is ready for Section 2
+    
+    ' --- Range A Setup (Briefly Included for Context) ---
     With Me.Controls.Add("Forms.Label.1", "lblRng1")
         .Caption = "1. Range A:": .Left = MARGIN: .Top = currentTop + 3: .Width = LBL_W
     End With
     Set refRange1 = Me.Controls.Add("RefEdit.Ctrl", "refRange1")
-    With refRange1
-        .Left = MARGIN + LBL_W: .Top = currentTop: .Width = INPUT_W: .Height = CTRL_H
-        .Text = addr1
-    End With
-    With Me.Controls.Add("Forms.Label.1", "lblName1")
-        .Caption = "Name:": .Left = MARGIN + LBL_W + INPUT_W + 10: .Top = currentTop + 3: .Width = 35
-    End With
-    Set txtName1 = Me.Controls.Add("Forms.TextBox.1", "txtName1")
-    With txtName1
-        .Left = MARGIN + LBL_W + INPUT_W + 50: .Top = currentTop: .Width = 80: .Height = CTRL_H
-        .Text = "T1" ' Default Name
-    End With
+    With refRange1: .Left = MARGIN + LBL_W: .Top = currentTop: .Width = INPUT_W: .Height = CTRL_H: .Text = addr1: End With
+    With Me.Controls.Add("Forms.Label.1", "lblName1"): .Caption = "Name:": .Left = MARGIN + LBL_W + INPUT_W + 10: .Top = currentTop + 3: .Width = 35: End With
+    Set txtName1 = Me.Controls.Add("Forms.TextBox.1", "txtName1"): With txtName1: .Left = MARGIN + LBL_W + INPUT_W + 50: .Top = currentTop: .Width = 80: .Height = CTRL_H: .Text = "T1": End With
     currentTop = currentTop + CTRL_H + GAP
     
-    ' --- Range B ---
-    With Me.Controls.Add("Forms.Label.1", "lblRng2")
-        .Caption = "2. Range B:": .Left = MARGIN: .Top = currentTop + 3: .Width = LBL_W
-    End With
-    Set refRange2 = Me.Controls.Add("RefEdit.Ctrl", "refRange2")
-    With refRange2
-        .Left = MARGIN + LBL_W: .Top = currentTop: .Width = INPUT_W: .Height = CTRL_H
-        .Text = addr2
-    End With
-    With Me.Controls.Add("Forms.Label.1", "lblName2")
-        .Caption = "Name:": .Left = MARGIN + LBL_W + INPUT_W + 10: .Top = currentTop + 3: .Width = 35
-    End With
-    Set txtName2 = Me.Controls.Add("Forms.TextBox.1", "txtName2")
-    With txtName2
-        .Left = MARGIN + LBL_W + INPUT_W + 50: .Top = currentTop: .Width = 80: .Height = CTRL_H
-        .Text = "T2" ' Default Name
-    End With
+    ' --- Range B Setup ---
+    With Me.Controls.Add("Forms.Label.1", "lblRng2"): .Caption = "2. Range B:": .Left = MARGIN: .Top = currentTop + 3: .Width = LBL_W: End With
+    Set refRange2 = Me.Controls.Add("RefEdit.Ctrl", "refRange2"): With refRange2: .Left = MARGIN + LBL_W: .Top = currentTop: .Width = INPUT_W: .Height = CTRL_H: .Text = addr2: End With
+    With Me.Controls.Add("Forms.Label.1", "lblName2"): .Caption = "Name:": .Left = MARGIN + LBL_W + INPUT_W + 10: .Top = currentTop + 3: .Width = 35: End With
+    Set txtName2 = Me.Controls.Add("Forms.TextBox.1", "txtName2"): With txtName2: .Left = MARGIN + LBL_W + INPUT_W + 50: .Top = currentTop: .Width = 80: .Height = CTRL_H: .Text = "T2": End With
     currentTop = currentTop + CTRL_H + GAP
     
-    ' ============================================================
-    ' [NEW] OPTION 1: Auto-Use Sheet Names
-    ' Position: Below Range B inputs
-    ' ============================================================
+    ' --- Auto-Use Sheet Names ---
     Set chkUseSheetNames = Me.Controls.Add("Forms.CheckBox.1", "chkUseSheetNames")
-    With chkUseSheetNames
-        .Caption = "Auto-use Sheet Name if ranges are on diff sheets"
-        .Left = MARGIN + LBL_W    ' Align with inputs
-        .Top = currentTop
-        .Width = 250
-        .Height = 18
-        .Font.Size = 9
-        .Value = True             ' Default Checked
-    End With
+    With chkUseSheetNames: .Caption = "Auto-use Sheet Name if diff": .Left = MARGIN + LBL_W: .Top = currentTop: .Width = 180: .Height = 18: .Font.Size = 9: .Value = True: End With
     currentTop = currentTop + 25
     
-    ' --- Validate & Reset Buttons ---
-    Set btnValidate = Me.Controls.Add("Forms.CommandButton.1", "btnValidate")
-    With btnValidate
-        .Caption = "Validate Headers": .Left = MARGIN: .Top = currentTop: .Width = 120: .Height = 24: .BackColor = &H80FF80
-    End With
-    Set btnReset = Me.Controls.Add("Forms.CommandButton.1", "btnReset")
-    With btnReset
-        .Caption = "Reset": .Left = MARGIN + 130: .Top = currentTop: .Width = 80: .Height = 24: .Enabled = False
-    End With
+    ' --- Validate Buttons ---
+    Set btnValidate = Me.Controls.Add("Forms.CommandButton.1", "btnValidate"): With btnValidate: .Caption = "Validate Headers": .Left = MARGIN: .Top = currentTop: .Width = 120: .Height = 24: .BackColor = &H80FF80: End With
+    Set btnReset = Me.Controls.Add("Forms.CommandButton.1", "btnReset"): With btnReset: .Caption = "Reset": .Left = MARGIN + 130: .Top = currentTop: .Width = 80: .Height = 24: .Enabled = False: End With
     currentTop = currentTop + 35
     
     ' ============================
     ' SECTION 2: COLUMN CONFIG
     ' ============================
-    
     Set frameConfig = Me.Controls.Add("Forms.Frame.1", "frameConfig")
     With frameConfig
         .Caption = "3. Column Config (Role, Order & Format)"
-        .Left = MARGIN
-        .Top = currentTop
-        .Width = Me.InsideWidth - (MARGIN * 2)
-        .Height = 280
-        .Enabled = False
+        .Left = MARGIN: .Top = currentTop: .Width = Me.InsideWidth - (MARGIN * 2): .Height = 280: .Enabled = False
     End With
     
-    ' --- HEADERS for ListBox ---
-    Dim colW1 As Double: colW1 = 150
-    Dim colW2 As Double: colW2 = 90
-    Dim colW3 As Double: colW3 = 80
+    ' (Frame internals: Headers, ListBox, Buttons - Keeping concise)
+    Dim colW1 As Double: colW1 = 150: Dim colW2 As Double: colW2 = 90: Dim colW3 As Double: colW3 = 80
+    With frameConfig.Controls.Add("Forms.Label.1", "lblHdr1"): .Caption = "Column Name": .Left = 10: .Top = 20: .Width = colW1: .Font.Bold = True: .Font.Size = 9: .ForeColor = &H8000000D: End With
+    With frameConfig.Controls.Add("Forms.Label.1", "lblHdr2"): .Caption = "Role / Status": .Left = 10 + colW1: .Top = 20: .Width = colW2: .Font.Bold = True: .Font.Size = 9: .ForeColor = &H8000000D: End With
+    With frameConfig.Controls.Add("Forms.Label.1", "lblHdr3"): .Caption = "Format": .Left = 10 + colW1 + colW2: .Top = 20: .Width = colW3: .Font.Bold = True: .Font.Size = 9: .ForeColor = &H8000000D: End With
     
-    With frameConfig.Controls.Add("Forms.Label.1", "lblHdr1")
-        .Caption = "Column Name": .Left = 10: .Top = 20: .Width = colW1
-        .Font.Bold = True: .Font.Size = 9: .ForeColor = &H8000000D
-    End With
-    With frameConfig.Controls.Add("Forms.Label.1", "lblHdr2")
-        .Caption = "Role / Status": .Left = 10 + colW1: .Top = 20: .Width = colW2
-        .Font.Bold = True: .Font.Size = 9: .ForeColor = &H8000000D
-    End With
-    With frameConfig.Controls.Add("Forms.Label.1", "lblHdr3")
-        .Caption = "Format": .Left = 10 + colW1 + colW2: .Top = 20: .Width = colW3
-        .Font.Bold = True: .Font.Size = 9: .ForeColor = &H8000000D
-    End With
-    
-    ' --- LISTBOX ---
     Set lstColumns = frameConfig.Controls.Add("Forms.ListBox.1", "lstColumns")
-    With lstColumns
-        .Left = 10: .Top = 35
-        .Width = 340: .Height = 235
-        .ColumnCount = 3: .ColumnWidths = CStr(colW1) & ";" & CStr(colW2) & ";" & CStr(colW3)
-        .MultiSelect = fmMultiSelectExtended
-    End With
+    With lstColumns: .Left = 10: .Top = 35: .Width = 340: .Height = 235: .ColumnCount = 3: .ColumnWidths = CStr(colW1) & ";" & CStr(colW2) & ";" & CStr(colW3): .MultiSelect = fmMultiSelectExtended: End With
     
-    ' --- BUTTONS (Right Side of Frame) ---
-    Dim btnLeft As Long: btnLeft = 360
-    Dim btnTop As Long: btnTop = 20
+    ' (Right Side Buttons in Frame)
+    Dim btnLeft As Long: btnLeft = 360: Dim btnTop As Long: btnTop = 20
+    With frameConfig.Controls.Add("Forms.Label.1", "lblOrd"): .Caption = "Order:": .Left = btnLeft: .Top = btnTop: .Width = 80: .Height = 15: End With: btnTop = btnTop + 15
+    Set btnUp = frameConfig.Controls.Add("Forms.CommandButton.1", "btnUp"): With btnUp: .Caption = "Move Up": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22: End With: btnTop = btnTop + 25
+    Set btnDown = frameConfig.Controls.Add("Forms.CommandButton.1", "btnDown"): With btnDown: .Caption = "Move Down": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22: End With: btnTop = btnTop + 35
     
-    ' 1. Reorder Group
-    With frameConfig.Controls.Add("Forms.Label.1", "lblOrd")
-        .Caption = "Order:": .Left = btnLeft: .Top = btnTop: .Width = 80: .Height = 15
-    End With
-    btnTop = btnTop + 15
-    Set btnUp = frameConfig.Controls.Add("Forms.CommandButton.1", "btnUp")
-    With btnUp
-        .Caption = "Move Up": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
-    End With
-    btnTop = btnTop + 25
-    Set btnDown = frameConfig.Controls.Add("Forms.CommandButton.1", "btnDown")
-    With btnDown
-        .Caption = "Move Down": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
-    End With
-    btnTop = btnTop + 35 ' Extra Gap
+    With frameConfig.Controls.Add("Forms.Label.1", "lblKey"): .Caption = "Match By:": .Left = btnLeft: .Top = btnTop: .Width = 80: .Height = 15: End With: btnTop = btnTop + 15
+    Set btnSetIndex = frameConfig.Controls.Add("Forms.CommandButton.1", "btnSetIndex"): With btnSetIndex: .Caption = "INDEX (Key)": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22: End With: btnTop = btnTop + 30
     
-    ' 2. Key Group
-    With frameConfig.Controls.Add("Forms.Label.1", "lblKey")
-        .Caption = "Match By:": .Left = btnLeft: .Top = btnTop: .Width = 80: .Height = 15
-    End With
-    btnTop = btnTop + 15
-    Set btnSetIndex = frameConfig.Controls.Add("Forms.CommandButton.1", "btnSetIndex")
-    With btnSetIndex
-        .Caption = "INDEX (Key)": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
-    End With
-    btnTop = btnTop + 30
+    With frameConfig.Controls.Add("Forms.Label.1", "lblRef"): .Caption = "Reference Src:": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 15: End With: btnTop = btnTop + 15
+    Set btnRefUseA = frameConfig.Controls.Add("Forms.CommandButton.1", "btnRefUseA"): With btnRefUseA: .Caption = "REF (Use A)": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22: End With: btnTop = btnTop + 25
+    Set btnRefUseB = frameConfig.Controls.Add("Forms.CommandButton.1", "btnRefUseB"): With btnRefUseB: .Caption = "REF (Use B)": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22: End With: btnTop = btnTop + 30
     
-    ' 3. Reference Group
-    With frameConfig.Controls.Add("Forms.Label.1", "lblRef")
-        .Caption = "Reference Src:": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 15
-    End With
-    btnTop = btnTop + 15
-    Set btnRefUseA = frameConfig.Controls.Add("Forms.CommandButton.1", "btnRefUseA")
-    With btnRefUseA
-        .Caption = "REF (Use A)": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
-    End With
-    btnTop = btnTop + 25
-    Set btnRefUseB = frameConfig.Controls.Add("Forms.CommandButton.1", "btnRefUseB")
-    With btnRefUseB
-        .Caption = "REF (Use B)": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
-    End With
-    btnTop = btnTop + 30
-    
-    ' 4. Action Group
-    With frameConfig.Controls.Add("Forms.Label.1", "lblOth")
-        .Caption = "Action:": .Left = btnLeft: .Top = btnTop: .Width = 80: .Height = 15
-    End With
-    btnTop = btnTop + 15
-    Set btnSetCompare = frameConfig.Controls.Add("Forms.CommandButton.1", "btnSetCompare")
-    With btnSetCompare
-        .Caption = "COMPARE": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
-    End With
-    btnTop = btnTop + 25
-    Set btnSetIgnore = frameConfig.Controls.Add("Forms.CommandButton.1", "btnSetIgnore")
-    With btnSetIgnore
-        .Caption = "IGNORE": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
-    End With
-    btnTop = btnTop + 30
-    
-    ' 5. Format Group
-    Set btnSetFormat = frameConfig.Controls.Add("Forms.CommandButton.1", "btnSetFormat")
-    With btnSetFormat
-        .Caption = "Set Format ($%)": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22
-    End With
+    With frameConfig.Controls.Add("Forms.Label.1", "lblOth"): .Caption = "Action:": .Left = btnLeft: .Top = btnTop: .Width = 80: .Height = 15: End With: btnTop = btnTop + 15
+    Set btnSetCompare = frameConfig.Controls.Add("Forms.CommandButton.1", "btnSetCompare"): With btnSetCompare: .Caption = "COMPARE": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22: End With: btnTop = btnTop + 25
+    Set btnSetIgnore = frameConfig.Controls.Add("Forms.CommandButton.1", "btnSetIgnore"): With btnSetIgnore: .Caption = "IGNORE": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22: End With: btnTop = btnTop + 30
+    Set btnSetFormat = frameConfig.Controls.Add("Forms.CommandButton.1", "btnSetFormat"): With btnSetFormat: .Caption = "Set Format ($%)": .Left = btnLeft: .Top = btnTop: .Width = 100: .Height = 22: End With
     
     currentTop = currentTop + 290
     
     ' ============================
-    ' SECTION 3: OUTPUT
+    ' SECTION 3: OUTPUT (UPDATED)
     ' ============================
     With Me.Controls.Add("Forms.Label.1", "lblOut")
-        .Caption = "4. Output Cell:": .Left = MARGIN: .Top = currentTop + 3: .Width = LBL_W: .Font.Bold = True
+        .Caption = "4. Output Destination:": .Left = MARGIN: .Top = currentTop + 3: .Width = 150: .Font.Bold = True
+    End With
+    currentTop = currentTop + 20
+    
+    ' [NEW] Output Option 1: New Sheet (Default Checked)
+    Set chkNewSheet = Me.Controls.Add("Forms.CheckBox.1", "chkNewSheet")
+    With chkNewSheet
+        .Caption = "Output to New Sheet"
+        .Left = MARGIN + 10
+        .Top = currentTop
+        .Width = 130
+        .Height = 18
+        .Value = True ' Default Checked
+    End With
+    
+    ' [NEW] Sheet Name TextBox
+    Set txtNewSheetName = Me.Controls.Add("Forms.TextBox.1", "txtNewSheetName")
+    With txtNewSheetName
+        .Left = MARGIN + 150
+        .Top = currentTop
+        .Width = 150
+        .Height = 18
+        .Text = "CmpResult"
+        .Enabled = True ' Enabled because Checkbox is True
+    End With
+    currentTop = currentTop + 25
+    
+    ' [NEW] Output Option 2: Existing Cell (Disabled by default)
+    With Me.Controls.Add("Forms.Label.1", "lblRefOut")
+        .Caption = "Or select cell:": .Left = MARGIN + 10: .Top = currentTop + 3: .Width = 80
     End With
     Set refOutput = Me.Controls.Add("RefEdit.Ctrl", "refOutput")
     With refOutput
-        .Left = MARGIN + LBL_W: .Top = currentTop: .Width = INPUT_W: .Height = CTRL_H
+        .Left = MARGIN + 90
+        .Top = currentTop
+        .Width = 210
+        .Height = CTRL_H
+        .Enabled = False ' Disabled because "New Sheet" is checked
     End With
-    currentTop = currentTop + 35
+    currentTop = currentTop + 30
     
     ' ============================
-    ' [NEW] OPTION 2: FLAT HEADER (CheckBox)
+    ' OPTION: FLAT HEADER
     ' ============================
     Set chkFlatHeader = Me.Controls.Add("Forms.CheckBox.1", "chkFlatHeader")
     With chkFlatHeader
         .Caption = "Flat Header (e.g., T1_Col1)"
-        .Left = MARGIN + LBL_W           ' Align with input boxes
+        .Left = MARGIN + 10
         .Top = currentTop
         .Width = 200
         .Height = 20
-        .Value = True ' Default Unchecked
+        .Value = True
     End With
-    currentTop = currentTop + 30
+    currentTop = currentTop + 35
     
     ' ============================
     ' SECTION 4: ACTION
     ' ============================
     Set btnRun = Me.Controls.Add("Forms.CommandButton.1", "btnRun")
-    With btnRun
-        .Caption = "Run Comparison": .Left = Me.InsideWidth - 220: .Top = currentTop: .Width = 120: .Height = 30: .Font.Bold = True: .Enabled = False
-    End With
+    With btnRun: .Caption = "Run Comparison": .Left = Me.InsideWidth - 220: .Top = currentTop: .Width = 120: .Height = 30: .Font.Bold = True: .Enabled = False: End With
     Set btnClose = Me.Controls.Add("Forms.CommandButton.1", "btnClose")
-    With btnClose
-        .Caption = "Close": .Left = Me.InsideWidth - 90: .Top = currentTop: .Width = 80: .Height = 30
-    End With
+    With btnClose: .Caption = "Close": .Left = Me.InsideWidth - 90: .Top = currentTop: .Width = 80: .Height = 30: End With
+    
+    txtNewSheetName.Enabled = chkNewSheet.Value
+    txtNewSheetName.BackColor = IIf(chkNewSheet.Value, &HFFFFFF, &HCCCCCC)
+    refOutput.Enabled = Not chkNewSheet.Value
     
     Me.Height = currentTop + 80
 End Sub
@@ -490,52 +437,89 @@ End Sub
 Private Sub btnRun_Click()
     Dim rngA As Range, rngB As Range, outputRng As Range
     Dim strIndex As String, strIgnore As String, strRef As String, strCompare As String
-    
     Dim arrIndex As Variant, arrIgnore As Variant, arrRef As Variant, arrCompare As Variant
     Dim dictRefDirs As Object: Set dictRefDirs = CreateObject("Scripting.Dictionary")
     Dim finalRefDirs As Variant
-    
     Dim i As Long, status As String, colName As String, colFmt As String
     Dim dictFormats As Object: Set dictFormats = CreateObject("Scripting.Dictionary")
     
     ' Get Table Names
     Dim name1 As String, name2 As String
-    name1 = txtName1.Text
-    name2 = txtName2.Text
+    name1 = txtName1.Text: name2 = txtName2.Text
     If name1 = "" Then name1 = "T1"
     If name2 = "" Then name2 = "T2"
     
     On Error Resume Next
-    Set outputRng = Range(refOutput.Text)
     Set rngA = Range(refRange1.Text)
     Set rngB = Range(refRange2.Text)
     On Error GoTo 0
     
-    If outputRng Is Nothing Then MsgBox "Select valid output cell.", vbExclamation: Exit Sub
-    Set outputRng = outputRng.Cells(1, 1)
+    ' ============================================================
+    ' [UPDATED] OUTPUT TARGET LOGIC (New Sheet vs Existing Cell)
+    ' ============================================================
     
-    ' --- LOOP LISTBOX (In Current Order) ---
+    If chkNewSheet.Value = True Then
+        ' --- OPTION A: NEW SHEET ---
+        Dim baseName As String
+        Dim finalName As String
+        Dim counter As Integer
+        Dim wsNew As Worksheet
+        Dim wsCheck As Worksheet
+        
+        ' 1. Get Base Name
+        baseName = Trim(txtNewSheetName.Text)
+        If baseName = "" Then baseName = "CmpResult"
+        
+        finalName = baseName
+        counter = 1
+        
+        ' 2. Check for Name Collision (Auto-Increment)
+        Do
+            Set wsCheck = Nothing
+            On Error Resume Next
+            Set wsCheck = ThisWorkbook.Sheets(finalName)
+            On Error GoTo 0
+            
+            If Not wsCheck Is Nothing Then
+                ' Name exists, increment
+                finalName = baseName & counter
+                counter = counter + 1
+            Else
+                ' Unique Name found
+                Exit Do
+            End If
+        Loop
+        
+        ' 3. Create Sheet
+        Set wsNew = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.count))
+        wsNew.Name = finalName
+        
+        ' 4. Set Output to A1
+        Set outputRng = wsNew.Range("A1")
+        
+    Else
+        ' --- OPTION B: EXISTING CELL ---
+        On Error Resume Next
+        Set outputRng = Range(refOutput.Text)
+        On Error GoTo 0
+        
+        If outputRng Is Nothing Then MsgBox "Select valid output cell.", vbExclamation: Exit Sub
+        Set outputRng = outputRng.Cells(1, 1)
+    End If
+    ' ============================================================
+    
+    ' --- LOOP LISTBOX (Config) ---
     For i = 0 To lstColumns.listCount - 1
         colName = lstColumns.List(i, 0)
         status = lstColumns.List(i, 1)
         colFmt = lstColumns.List(i, 2)
-        
-        ' Record Format
         If Len(colFmt) > 0 And LCase(colFmt) <> "general" Then dictFormats.item(colName) = colFmt
-        
         Select Case status
-            Case "INDEX"
-                strIndex = strIndex & colName & ","
-            Case "IGNORE"
-                strIgnore = strIgnore & colName & ","
-            Case "REF: Range A"
-                strRef = strRef & colName & ","
-                dictRefDirs.item(colName) = False
-            Case "REF: Range B"
-                strRef = strRef & colName & ","
-                dictRefDirs.item(colName) = True
-            Case "COMPARE"
-                strCompare = strCompare & colName & ","
+            Case "INDEX": strIndex = strIndex & colName & ","
+            Case "IGNORE": strIgnore = strIgnore & colName & ","
+            Case "REF: Range A": strRef = strRef & colName & ",": dictRefDirs.item(colName) = False
+            Case "REF: Range B": strRef = strRef & colName & ",": dictRefDirs.item(colName) = True
+            Case "COMPARE": strCompare = strCompare & colName & ","
         End Select
     Next i
     
@@ -543,15 +527,12 @@ Private Sub btnRun_Click()
     arrIgnore = StringToArray(strIgnore)
     arrRef = StringToArray(strRef)
     arrCompare = StringToArray(strCompare)
-    
     If dictRefDirs.count > 0 Then Set finalRefDirs = dictRefDirs Else finalRefDirs = Empty
     
     If IsEmpty(arrIndex) Or UBound(arrIndex) = -1 Then MsgBox "Select at least one INDEX column.", vbExclamation: Exit Sub
     
-    ' --- CHECK FLAT HEADER OPTION ---
-    Dim isFlat As Boolean
-    ' Ensure you have declared 'Public chkFlatHeader' or utilize Me.Controls check
-    isFlat = chkFlatHeader.Value
+    ' --- Flat Header Check ---
+    Dim isFlat As Boolean: isFlat = chkFlatHeader.Value
     
     ' --- CALL MAIN FUNCTION ---
     Dim resultData As Variant
@@ -569,62 +550,42 @@ Private Sub btnRun_Click()
             MsgBox "Error: " & resultData(1, 1), vbCritical: Exit Sub
         End If
         
+        ' Activate the target sheet (New or Existing)
         outputRng.Worksheet.Activate
         outputRng.Resize(rCount, cCount).Value = resultData
         outputRng.Resize(1, cCount).Font.Bold = True
         
-        ' ============================================================
-        ' [FIXED] APPLY FORMATTING LOGIC
-        ' ============================================================
+        ' --- APPLY FORMATTING ---
         If dictFormats.count > 0 Then
             Dim headerRng As Range, cell As Range
-            Dim headerRowIndex As Long
-            Dim dataRowCount As Long
+            Dim headerRowIndex As Long, dataRowCount As Long
             
-            ' Determine Header Position and Data Height based on Flat mode
             If isFlat Then
-                headerRowIndex = 0 ' Row 1 (Top)
-                dataRowCount = rCount - 1
+                headerRowIndex = 0: dataRowCount = rCount - 1
             Else
-                headerRowIndex = 1 ' Row 2 (Below Group Names)
-                dataRowCount = rCount - 2
+                headerRowIndex = 1: dataRowCount = rCount - 2
             End If
             
             If dataRowCount > 0 Then
                 Set headerRng = outputRng.offset(headerRowIndex, 0).Resize(1, cCount)
-                
                 For Each cell In headerRng.Cells
-                    Dim fmtKey As String
-                    fmtKey = cell.Value
-                    
-                    ' 1. Check Exact Match (Standard Mode usually hits this)
+                    Dim fmtKey As String: fmtKey = cell.Value
                     If dictFormats.Exists(fmtKey) Then
                         cell.offset(1, 0).Resize(dataRowCount, 1).NumberFormat = dictFormats(fmtKey)
                     Else
-                        ' 2. Check Prefix Match (For Flat Mode: "T1_Price" -> "Price")
-                        ' Prefixes to strip: Name1_, Name2_, Diff_
-                        Dim prefixes As Variant
-                        prefixes = Array(name1 & "_", name2 & "_", "Diff_")
-                        
+                        Dim prefixes As Variant: prefixes = Array(name1 & "_", name2 & "_", "Diff_")
                         Dim p As Variant
                         For Each p In prefixes
-                            ' Check if cell starts with Prefix (Case Insensitive)
                             If InStr(1, fmtKey, p, vbTextCompare) = 1 Then
-                                ' Strip prefix to get original column name
                                 fmtKey = Mid(fmtKey, Len(p) + 1)
                                 Exit For
                             End If
                         Next p
-                        
-                        ' Re-check with stripped name
-                        If dictFormats.Exists(fmtKey) Then
-                             cell.offset(1, 0).Resize(dataRowCount, 1).NumberFormat = dictFormats(fmtKey)
-                        End If
+                        If dictFormats.Exists(fmtKey) Then cell.offset(1, 0).Resize(dataRowCount, 1).NumberFormat = dictFormats(fmtKey)
                     End If
                 Next cell
             End If
         End If
-        ' ============================================================
         
         MsgBox "Comparison Complete!", vbInformation
         Unload Me
