@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_melt"
-Attribute VB_Base = "0{738EF79A-1754-4D7F-8741-C6C0AC7305A2}{C42CC64E-73F0-4CB5-A238-41EAEBE8D8B8}"
+Attribute VB_Base = "0{202CA721-D673-4ECB-9C94-53FE32D6C1F4}{B8E06F7E-6ABF-43E8-8F26-986472E1F94B}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
