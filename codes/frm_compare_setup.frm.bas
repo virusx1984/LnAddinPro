@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_compare_setup"
-Attribute VB_Base = "0{C07928B3-E9B5-4DBA-B8F7-D6D9FA88715E}{6BEEADB5-5256-42B3-ACAB-9CDE04E71847}"
+Attribute VB_Base = "0{722543CA-3C56-4DFF-9CE6-E59B5706E6F7}{6BEEADB5-5256-42B3-ACAB-9CDE04E71847}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -11,7 +11,10 @@ Attribute VB_Customizable = False
 ' UPDATED: Added Re-ordering buttons (Up/Down) and passing sorted Compare columns.
 Option Explicit
 
-' --- 1. Event Handler Declarations ---
+' ==============================================================================
+' PUBLIC CONTROL VARIABLES
+' Declare these at the very top of the UserForm Code
+' ==============================================================================
 Public WithEvents btnValidate As MSForms.CommandButton
 Attribute btnValidate.VB_VarHelpID = -1
 Public WithEvents btnReset As MSForms.CommandButton
@@ -31,7 +34,7 @@ Attribute btnRefUseB.VB_VarHelpID = -1
 Public WithEvents btnSetFormat As MSForms.CommandButton
 Attribute btnSetFormat.VB_VarHelpID = -1
 
-' [NEW] Reorder Buttons
+' Reorder Buttons
 Public WithEvents btnUp As MSForms.CommandButton
 Attribute btnUp.VB_VarHelpID = -1
 Public WithEvents btnDown As MSForms.CommandButton
@@ -43,7 +46,7 @@ Attribute btnRun.VB_VarHelpID = -1
 Public WithEvents btnClose As MSForms.CommandButton
 Attribute btnClose.VB_VarHelpID = -1
 
-' --- 2. Control References ---
+' Control References
 Public refRange1 As Object
 Public refRange2 As Object
 Public txtName1 As Object
@@ -51,42 +54,47 @@ Public txtName2 As Object
 Public refOutput As Object
 Public lstColumns As MSForms.ListBox
 Public frameConfig As MSForms.Frame
-Public chkFlatHeader As Object
 
-' --- 3. Layout Constants ---
+' [NEW] Checkboxes
+Public chkUseSheetNames As MSForms.CheckBox
+Public chkFlatHeader As MSForms.CheckBox
+
+' Layout Constants
 Const MARGIN As Long = 10
 Const CTRL_H As Long = 20
 Const GAP As Long = 5
 Const LBL_W As Long = 80
 Const INPUT_W As Long = 180
 
+' ==============================================================================
+' SUB: UserForm_Initialize
+' Purpose: Builds the UI dynamically and pre-fills data based on selection.
+' ==============================================================================
 Private Sub UserForm_Initialize()
     
     Me.Caption = "Compare Setup (Complete)"
     Me.Width = 550
-    Me.Height = 580 ' Slightly increased height for new controls
+    Me.Height = 600 ' Increased height to accommodate new checkboxes
     
     Dim currentTop As Long: currentTop = MARGIN
     
     ' ============================
-    ' PRE-CHECK SELECTION (With Sheet Names)
+    ' PRE-CHECK SELECTION (Get Addresses & Sheet)
     ' ============================
     Dim addr1 As String
     Dim addr2 As String
     Dim selSheetName As String
     
-    ' Check what is currently selected
+    ' Check current selection
     If TypeName(Selection) = "Range" Then
-        ' Get current sheet name (add single quotes for safety)
+        ' Get sheet name safely (add single quotes for spaces)
         selSheetName = "'" & Selection.Parent.Name & "'!"
         
         If Selection.Areas.count >= 1 Then
-            ' Append SheetName + Address
             addr1 = selSheetName & Selection.Areas(1).Address(External:=False)
         End If
         
         If Selection.Areas.count >= 2 Then
-            ' Append SheetName + Address
             addr2 = selSheetName & Selection.Areas(2).Address(External:=False)
         End If
     End If
@@ -110,7 +118,7 @@ Private Sub UserForm_Initialize()
     Set txtName1 = Me.Controls.Add("Forms.TextBox.1", "txtName1")
     With txtName1
         .Left = MARGIN + LBL_W + INPUT_W + 50: .Top = currentTop: .Width = 80: .Height = CTRL_H
-        .Text = "T1" ' Default Name T1
+        .Text = "T1" ' Default Name
     End With
     currentTop = currentTop + CTRL_H + GAP
     
@@ -129,11 +137,27 @@ Private Sub UserForm_Initialize()
     Set txtName2 = Me.Controls.Add("Forms.TextBox.1", "txtName2")
     With txtName2
         .Left = MARGIN + LBL_W + INPUT_W + 50: .Top = currentTop: .Width = 80: .Height = CTRL_H
-        .Text = "T2" ' Default Name T2
+        .Text = "T2" ' Default Name
     End With
-    currentTop = currentTop + CTRL_H + GAP + 10
+    currentTop = currentTop + CTRL_H + GAP
     
-    ' --- Validate & Reset ---
+    ' ============================================================
+    ' [NEW] OPTION 1: Auto-Use Sheet Names
+    ' Position: Below Range B inputs
+    ' ============================================================
+    Set chkUseSheetNames = Me.Controls.Add("Forms.CheckBox.1", "chkUseSheetNames")
+    With chkUseSheetNames
+        .Caption = "Auto-use Sheet Name if ranges are on diff sheets"
+        .Left = MARGIN + LBL_W    ' Align with inputs
+        .Top = currentTop
+        .Width = 250
+        .Height = 18
+        .Font.Size = 9
+        .Value = True             ' Default Checked
+    End With
+    currentTop = currentTop + 25
+    
+    ' --- Validate & Reset Buttons ---
     Set btnValidate = Me.Controls.Add("Forms.CommandButton.1", "btnValidate")
     With btnValidate
         .Caption = "Validate Headers": .Left = MARGIN: .Top = currentTop: .Width = 120: .Height = 24: .BackColor = &H80FF80
@@ -158,7 +182,7 @@ Private Sub UserForm_Initialize()
         .Enabled = False
     End With
     
-    ' --- HEADER LABELS ---
+    ' --- HEADERS for ListBox ---
     Dim colW1 As Double: colW1 = 150
     Dim colW2 As Double: colW2 = 90
     Dim colW3 As Double: colW3 = 80
@@ -185,7 +209,7 @@ Private Sub UserForm_Initialize()
         .MultiSelect = fmMultiSelectExtended
     End With
     
-    ' --- BUTTONS (Right Side) ---
+    ' --- BUTTONS (Right Side of Frame) ---
     Dim btnLeft As Long: btnLeft = 360
     Dim btnTop As Long: btnTop = 20
     
@@ -269,7 +293,7 @@ Private Sub UserForm_Initialize()
     currentTop = currentTop + 35
     
     ' ============================
-    ' OPTION: FLAT HEADER (CheckBox)
+    ' [NEW] OPTION 2: FLAT HEADER (CheckBox)
     ' ============================
     Set chkFlatHeader = Me.Controls.Add("Forms.CheckBox.1", "chkFlatHeader")
     With chkFlatHeader
@@ -278,7 +302,7 @@ Private Sub UserForm_Initialize()
         .Top = currentTop
         .Width = 200
         .Height = 20
-        .Value = False ' Default unchecked
+        .Value = True ' Default Unchecked
     End With
     currentTop = currentTop + 30
     
@@ -305,7 +329,7 @@ Private Sub btnValidate_Click()
     Dim dataVal As Variant
     Dim isNum As Boolean
     
-    ' Error handling for invalid range references
+    ' Error handling
     On Error Resume Next
     Set rng1 = Range(refRange1.Text)
     Set rng2 = Range(refRange2.Text)
@@ -316,13 +340,35 @@ Private Sub btnValidate_Click()
     If rng1.Columns.count <> rng2.Columns.count Then MsgBox "Column count mismatch.", vbCritical: Exit Sub
     
     ' ==============================================================================
-    ' [UPDATED] Auto-Name Logic
-    ' Logic: If Range A and Range B are on different worksheets,
-    '        update the Name textboxes to match the Worksheet names.
+    ' [UPDATED] Name Handling Logic
+    ' 1. If "Auto-use Sheet Names" is CHECKED and sheets are different -> Overwrite.
+    ' 2. If UNCHECKED -> Keep existing text.
+    ' 3. Empty Check -> Ensure names are not empty.
     ' ==============================================================================
-    If rng1.Parent.Name <> rng2.Parent.Name Then
-        txtName1.Text = rng1.Parent.Name
-        txtName2.Text = rng2.Parent.Name
+    
+    ' Check logic: If checked and sheets differ, force update
+    If chkUseSheetNames.Value = True Then
+        If rng1.Parent.Name <> rng2.Parent.Name Then
+            txtName1.Text = rng1.Parent.Name
+            txtName2.Text = rng2.Parent.Name
+        End If
+    End If
+    
+    ' Validation: Names cannot be empty
+    If Trim(txtName1.Text) = "" Then
+        If rng1.Parent.Name <> rng2.Parent.Name Then
+             txtName1.Text = rng1.Parent.Name
+        Else
+             txtName1.Text = "T1"
+        End If
+    End If
+    
+    If Trim(txtName2.Text) = "" Then
+        If rng1.Parent.Name <> rng2.Parent.Name Then
+             txtName2.Text = rng2.Parent.Name
+        Else
+             txtName2.Text = "T2"
+        End If
     End If
     ' ==============================================================================
 
@@ -346,7 +392,6 @@ Private Sub btnValidate_Click()
     For i = 1 To UBound(headers1, 2)
         lstColumns.AddItem headers1(1, i)
         
-        ' Check data row (Row 2) to determine if numeric
         If rng1.Rows.count > 1 Then
             dataVal = rng1.Cells(2, i).Value
             isNum = IsNumeric(dataVal) And Not IsEmpty(dataVal)
@@ -355,11 +400,9 @@ Private Sub btnValidate_Click()
         End If
         
         If isNum Then
-            ' === Numeric: Default to COMPARE ===
             lstColumns.List(i - 1, 1) = "COMPARE"
             lstColumns.List(i - 1, 2) = "#,##0.00_-;[Red]-#,##0.00_-;""-""_-;@"
         Else
-            ' === Non-Numeric: Default to INDEX ===
             lstColumns.List(i - 1, 1) = "INDEX"
             lstColumns.List(i - 1, 2) = "@"
         End If
