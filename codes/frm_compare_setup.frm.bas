@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_compare_setup"
-Attribute VB_Base = "0{4B430C2B-4B64-498A-A83F-A818AA3708D1}{6F04D38A-C6B4-46D8-BE6F-42C2ADB30350}"
+Attribute VB_Base = "0{C07928B3-E9B5-4DBA-B8F7-D6D9FA88715E}{6BEEADB5-5256-42B3-ACAB-9CDE04E71847}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -298,7 +298,6 @@ Private Sub UserForm_Initialize()
 End Sub
 
 ' --- EVENT HANDLERS ---
-
 Private Sub btnValidate_Click()
     Dim rng1 As Range, rng2 As Range
     Dim headers1 As Variant, headers2 As Variant
@@ -306,6 +305,7 @@ Private Sub btnValidate_Click()
     Dim dataVal As Variant
     Dim isNum As Boolean
     
+    ' Error handling for invalid range references
     On Error Resume Next
     Set rng1 = Range(refRange1.Text)
     Set rng2 = Range(refRange2.Text)
@@ -315,6 +315,17 @@ Private Sub btnValidate_Click()
     If rng1 Is Nothing Or rng2 Is Nothing Then MsgBox "Invalid ranges.", vbCritical: Exit Sub
     If rng1.Columns.count <> rng2.Columns.count Then MsgBox "Column count mismatch.", vbCritical: Exit Sub
     
+    ' ==============================================================================
+    ' [UPDATED] Auto-Name Logic
+    ' Logic: If Range A and Range B are on different worksheets,
+    '        update the Name textboxes to match the Worksheet names.
+    ' ==============================================================================
+    If rng1.Parent.Name <> rng2.Parent.Name Then
+        txtName1.Text = rng1.Parent.Name
+        txtName2.Text = rng2.Parent.Name
+    End If
+    ' ==============================================================================
+
     ' Get Headers
     headers1 = rng1.Rows(1).Value
     headers2 = rng2.Rows(1).Value
@@ -324,7 +335,7 @@ Private Sub btnValidate_Click()
         If CStr(headers1(1, i)) <> CStr(headers2(1, i)) Then MsgBox "Header mismatch at col " & i, vbCritical: Exit Sub
     Next i
     
-    ' --- Enable Config ---
+    ' --- Validation Passed, Enable Config Section ---
     ToggleInputs False
     btnReset.Enabled = True
     frameConfig.Enabled = True
@@ -335,6 +346,7 @@ Private Sub btnValidate_Click()
     For i = 1 To UBound(headers1, 2)
         lstColumns.AddItem headers1(1, i)
         
+        ' Check data row (Row 2) to determine if numeric
         If rng1.Rows.count > 1 Then
             dataVal = rng1.Cells(2, i).Value
             isNum = IsNumeric(dataVal) And Not IsEmpty(dataVal)
@@ -343,9 +355,11 @@ Private Sub btnValidate_Click()
         End If
         
         If isNum Then
+            ' === Numeric: Default to COMPARE ===
             lstColumns.List(i - 1, 1) = "COMPARE"
             lstColumns.List(i - 1, 2) = "#,##0.00_-;[Red]-#,##0.00_-;""-""_-;@"
         Else
+            ' === Non-Numeric: Default to INDEX ===
             lstColumns.List(i - 1, 1) = "INDEX"
             lstColumns.List(i - 1, 2) = "@"
         End If
