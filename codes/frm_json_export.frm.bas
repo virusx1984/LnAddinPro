@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_json_export"
-Attribute VB_Base = "0{F52C0BFD-4E12-4568-90B4-0FCA8344A5A5}{85A96326-56BE-460B-97E9-E8505395F272}"
+Attribute VB_Base = "0{5752D884-E32F-4D2C-8D18-645868E92955}{E1B4E5BD-D593-4EFA-8AB6-9328B212CBB6}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True

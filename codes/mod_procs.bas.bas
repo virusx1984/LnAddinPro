@@ -1,5 +1,37 @@
 Attribute VB_Name = "mod_procs"
 ' ==============================================================================
+' Purpose: Sets the standard format for the active sheet:
+'          1. Hides Gridlines.
+'          2. Sets Font to Arial.
+'          3. Sets Font Size to 10.
+' ==============================================================================
+Public Sub LNS_ApplyStandardFormat(control As IRibbonControl)
+    On Error Resume Next
+    
+    ' Optimize performance
+    Application.ScreenUpdating = False
+    
+    ' 1. Hide Gridlines for the active window
+    ActiveWindow.DisplayGridlines = False
+    
+    ' 2. Apply Font settings to all cells
+    With ActiveSheet.Cells.Font
+        .Name = ""
+    End With
+    With ActiveSheet.Cells.Font
+        .Name = "Arial"
+        .Size = 10
+    End With
+    
+    ' Optional: Select A1 to reset selection
+    ActiveSheet.Range("A1").Select
+    
+    ' Restore
+    Application.ScreenUpdating = True
+    On Error GoTo 0
+End Sub
+
+' ==============================================================================
 ' Purpose: Registers custom functions (UDFs) descriptions into Excel.
 ' The control parameter is REQUIRED by the Ribbon's onAction mechanism.
 ' ==============================================================================
