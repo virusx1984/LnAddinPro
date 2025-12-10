@@ -1,4 +1,17 @@
 Attribute VB_Name = "mod_procs"
+' ==============================================================================
+' Purpose: Registers custom functions (UDFs) descriptions into Excel.
+' The control parameter is REQUIRED by the Ribbon's onAction mechanism.
+' ==============================================================================
+Public Sub LNS_RegisterFunctions(control As IRibbonControl)
+    ' LNS: LnAddinPro Sub - Manually triggers the function description registration.
+    
+    ' Call the wrapper function in mod_lnf
+    ' Make sure Manual_Register_LNF is Public in mod_lnf
+    Run "Manual_Register_LNF"
+    
+End Sub
+
 ' Purpose: Launches the About UserForm.
 Public Sub LNS_ShowAboutForm(control As IRibbonControl)
     Load frm_about

@@ -2,6 +2,46 @@ Attribute VB_Name = "Mod_LNF"
 Option Explicit
 
 ' ==============================================================================
+' SUB: Manual_Register_LNF
+' Purpose: A wrapper to safely register function descriptions.
+'          It checks if Excel is ready (has visible windows) to avoid Error 1004.
+'          It also saves the Add-in to persist changes.
+' ==============================================================================
+Public Sub Manual_Register_LNF()
+    
+    ' 1. Check if there are any visible workbooks open.
+    '    Application.MacroOptions requires a visible window context to run safely.
+    If Application.Windows.count = 0 Then
+        MsgBox "Cannot register functions when no workbook is open." & vbCrLf & _
+               "Please open or create a blank workbook and try again.", _
+               vbExclamation, "Registration Skipped"
+        Exit Sub
+    End If
+    
+    ' 2. Error Handling to catch unexpected issues
+    On Error GoTo ErrHandler
+    
+    ' 3. Call the main registration routine
+    Call Register_LNF_Functions
+    
+    ' 4. Critical: Save the Add-in itself to persist the descriptions!
+    '    If you don't save ThisWorkbook, the descriptions will be lost on restart.
+    If ThisWorkbook.IsAddin Then
+        ThisWorkbook.Save
+    End If
+    
+    ' 5. Success Message
+    MsgBox "LNF Functions registered and Add-in saved successfully!", _
+           vbInformation, "Success"
+    
+    Exit Sub
+
+ErrHandler:
+    MsgBox "An error occurred during registration: " & Err.Description, _
+           vbCritical, "Error " & Err.Number
+End Sub
+
+' ==============================================================================
 ' SUB: Register_LNF_Functions
 ' Purpose: Registers function descriptions and argument help text for the
 '          Excel Function Wizard (Shift + F3).

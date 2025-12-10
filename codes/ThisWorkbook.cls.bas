@@ -6,6 +6,3 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
 Attribute VB_TemplateDerived = False
 Attribute VB_Customizable = True
-Private Sub Workbook_Open()
-    Call Register_LNF_Functions
-End Sub
