@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_compare_setup"
-Attribute VB_Base = "0{34053561-E422-44C8-A1B3-967814C64DE7}{0E3AA68D-4E27-40F4-A435-9E788C9F3513}"
+Attribute VB_Base = "0{EA40F5EF-ED5F-496F-8872-B7A5CD5032B8}{0E3AA68D-4E27-40F4-A435-9E788C9F3513}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -433,7 +433,7 @@ Private Sub btnSetFormat_Click()
     Next i
 End Sub
 
-' --- RUN HANDLER (FIXED FOR FLAT HEADER FORMATTING) ---
+' --- RUN HANDLER ---
 Private Sub btnRun_Click()
     Dim rngA As Range, rngB As Range, outputRng As Range
     Dim strIndex As String, strIgnore As String, strRef As String, strCompare As String
@@ -449,39 +449,48 @@ Private Sub btnRun_Click()
     If name1 = "" Then name1 = "T1"
     If name2 = "" Then name2 = "T2"
     
+    ' Set Ranges
     On Error Resume Next
     Set rngA = Range(refRange1.Text)
     Set rngB = Range(refRange2.Text)
     On Error GoTo 0
     
-    ' ============================================================
-    ' [UPDATED] OUTPUT TARGET LOGIC (New Sheet vs Existing Cell)
-    ' ============================================================
+    If rngA Is Nothing Or rngB Is Nothing Then
+        MsgBox "Invalid Ranges selected.", vbCritical
+        Exit Sub
+    End If
     
+    ' ============================================================
+    ' [FIXED] OUTPUT LOGIC: NEW SHEET CREATION
+    ' ============================================================
     If chkNewSheet.Value = True Then
         ' --- OPTION A: NEW SHEET ---
         Dim baseName As String
         Dim finalName As String
         Dim counter As Integer
+        Dim targetWB As Workbook ' Define the target workbook
         Dim wsNew As Worksheet
         Dim wsCheck As Worksheet
         
-        ' 1. Get Base Name
+        ' 1. Determine Target Workbook (Same as Range A)
+        Set targetWB = rngA.Worksheet.Parent
+        
+        ' 2. Get Base Name
         baseName = Trim(txtNewSheetName.Text)
         If baseName = "" Then baseName = "CmpResult"
         
         finalName = baseName
         counter = 1
         
-        ' 2. Check for Name Collision (Auto-Increment)
+        ' 3. Check for Name Collision (Auto-Increment)
         Do
             Set wsCheck = Nothing
             On Error Resume Next
-            Set wsCheck = ThisWorkbook.Sheets(finalName)
+            Set wsCheck = targetWB.Sheets(finalName)
             On Error GoTo 0
             
             If Not wsCheck Is Nothing Then
-                ' Name exists, increment
+                ' Name exists, increment count
                 finalName = baseName & counter
                 counter = counter + 1
             Else
@@ -490,11 +499,19 @@ Private Sub btnRun_Click()
             End If
         Loop
         
-        ' 3. Create Sheet
-        Set wsNew = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.count))
-        wsNew.Name = finalName
+        ' 4. Create Sheet in the Target Workbook
+        Set wsNew = targetWB.Worksheets.Add(After:=targetWB.Worksheets(targetWB.Worksheets.count))
         
-        ' 4. Set Output to A1
+        ' 5. Rename Sheet (Handle errors in case name is invalid)
+        On Error Resume Next
+        wsNew.Name = finalName
+        If Err.Number <> 0 Then
+            MsgBox "Error renaming sheet to '" & finalName & "'. Using default name.", vbExclamation
+            Err.Clear
+        End If
+        On Error GoTo 0
+        
+        ' 6. Set Output to A1 of the new sheet
         Set outputRng = wsNew.Range("A1")
         
     Else
