@@ -847,6 +847,7 @@ End Function
 
 ' Purpose: Melts a table (wide-to-long format transformation), similar to pandas.melt().
 ' It preserves index columns and transforms other columns into variable-value pairs.
+' UPDATED: Automatically aligns idColumnsRange rows to match tableRange rows.
 '
 ' @param tableRange (Range): The full table range, including headers, index, and value columns.
 ' @param idColumnsRange (Range): The range of columns to be used as index (id_vars).
@@ -876,13 +877,34 @@ Public Function MeltData(ByVal tableRange As Range, ByVal idColumnsRange As Rang
     totalRows = UBound(data, 1) ' Total number of rows including header
     totalCols = UBound(data, 2) ' Total number of columns
     
-    ' Validate that the tableRange and idColumnsRange are aligned in height.
-    If tableRange.Rows.count <> idColumnsRange.Rows.count Then
-        MeltData = CVErr(xlErrValue) ' Return #VALUE! error
-        Exit Function
+    ' ==============================================================================
+    ' [UPDATED] Auto-Align ID Columns to Match Table Rows
+    ' Logic: If rows don't match (e.g., A:A vs B2:E10), crop ID range to match Table.
+    ' ==============================================================================
+    If (tableRange.Rows.count <> idColumnsRange.Rows.count) Or _
+       (tableRange.Row <> idColumnsRange.Row) Then
+        
+        ' Ensure both ranges are on the same worksheet
+        If tableRange.Parent.Name = idColumnsRange.Parent.Name Then
+            On Error Resume Next
+            ' Intersect: Restrict ID columns to the rows covered by tableRange
+            Set idColumnsRange = Application.Intersect(idColumnsRange.EntireColumn, tableRange.EntireRow)
+            On Error GoTo 0
+            
+            ' Safety Check: If intersection failed (no overlap), return Error
+            If idColumnsRange Is Nothing Then
+                MeltData = CVErr(xlErrValue)
+                Exit Function
+            End If
+        Else
+            ' Cannot process ranges across different sheets
+            MeltData = CVErr(xlErrValue)
+            Exit Function
+        End If
     End If
+    ' ==============================================================================
 
-    ' Get ID column count from the passed range.
+    ' Get ID column count from the passed (and potentially adjusted) range.
     idColCount = idColumnsRange.Columns.count
     valueColCount = totalCols - idColCount
     
@@ -950,6 +972,7 @@ Public Function MeltData(ByVal tableRange As Range, ByVal idColumnsRange As Rang
             ' 3. Assign Value
             result(currentResultRow, idColCount + 2) = data(dataRow, dataCol)
             
+            ' Move to next result row
             currentResultRow = currentResultRow + 1
         Next dataCol
     Next dataRow
