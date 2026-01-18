@@ -2,8 +2,9 @@ Attribute VB_Name = "mod_procs"
 ' ==============================================================================
 ' Purpose: Sets the standard format for the active sheet:
 '          1. Hides Gridlines.
-'          2. Sets Font to Arial.
-'          3. Sets Font Size to 10.
+'          2. Hides Page Breaks (dashed lines).
+'          3. Sets Font to Arial, Size 10.
+'          4. Sets Vertical Alignment to Center.
 ' ==============================================================================
 Public Sub LNS_ApplyStandardFormat(control As IRibbonControl)
     On Error Resume Next
@@ -14,14 +15,17 @@ Public Sub LNS_ApplyStandardFormat(control As IRibbonControl)
     ' 1. Hide Gridlines for the active window
     ActiveWindow.DisplayGridlines = False
     
-    ' 2. Apply Font settings to all cells
-    With ActiveSheet.Cells.Font
-        .Name = ""
-    End With
+    ' 2. Hide Page Breaks (dashed lines)
+    ActiveSheet.DisplayPageBreaks = False
+    
+    ' 3. Apply Font settings to all cells
     With ActiveSheet.Cells.Font
         .Name = "Arial"
         .Size = 10
     End With
+    
+    ' 4. Set Vertical Alignment to Center for all cells
+    ActiveSheet.Cells.VerticalAlignment = xlCenter
     
     ' Optional: Select A1 to reset selection
     ActiveSheet.Range("A1").Select
