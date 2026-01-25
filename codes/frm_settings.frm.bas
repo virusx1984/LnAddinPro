@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_settings"
-Attribute VB_Base = "0{E31DFD03-7A63-47E4-B248-D90AC92924F2}{A33D5968-AC5D-436D-9BD0-3B61EA0FAB40}"
+Attribute VB_Base = "0{0244728A-47BD-4AF9-8760-38D6AF68FDAF}{94C77B2E-D89E-49C0-974F-9886D443D1CB}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True

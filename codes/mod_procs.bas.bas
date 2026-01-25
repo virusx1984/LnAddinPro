@@ -1,5 +1,53 @@
 Attribute VB_Name = "mod_procs"
 ' ==============================================================================
+' Purpose: Colors selected cells based on Boolean values.
+'          True  -> Green (vbGreen)
+'          False -> Red (vbRed)
+'          Others -> Unchanged
+' ==============================================================================
+Public Sub LNS_ColorBooleanValues(control As IRibbonControl)
+    Dim cell As Range
+    Dim selectedRng As Range
+    Dim cellVal As Variant
+    
+    ' 1. Check if selection is a Range
+    If TypeName(Selection) <> "Range" Then
+        MsgBox "Please select a range first.", vbExclamation, "LnAddinPro"
+        Exit Sub
+    End If
+    
+    Set selectedRng = Selection
+    
+    ' Optimize performance
+    Application.ScreenUpdating = False
+    
+    ' 2. Loop through each cell
+    On Error Resume Next ' Prevent errors on special cell types
+    For Each cell In selectedRng
+        cellVal = cell.Value
+        
+        ' Skip Error cells and Empty cells
+        If Not IsError(cellVal) And Not IsEmpty(cellVal) Then
+            
+            ' Check for TRUE (Boolean or Text)
+            If UCase(CStr(cellVal)) = "TRUE" Then
+                cell.Interior.Color = vbGreen
+                
+            ' Check for FALSE (Boolean or Text)
+            ElseIf UCase(CStr(cellVal)) = "FALSE" Then
+                cell.Interior.Color = vbRed
+            End If
+            
+            ' Note: Other values remain unchanged
+        End If
+    Next cell
+    On Error GoTo 0
+    
+    ' Restore
+    Application.ScreenUpdating = True
+End Sub
+
+' ==============================================================================
 ' Purpose: Sets the standard format for the active sheet:
 '          1. Hides Gridlines.
 '          2. Hides Page Breaks (dashed lines).

@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_about"
-Attribute VB_Base = "0{49F2B6A4-0E8A-4CED-B609-810BD5846C44}{FFD5BA4E-441D-426C-8E47-1E3ED14200D0}"
+Attribute VB_Base = "0{15BB9FD4-FC3F-4AAA-BFB1-65F87250CADE}{D3FB8156-CD0B-4DE8-AE35-8969B91DEB3B}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True

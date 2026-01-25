@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_compare_setup"
-Attribute VB_Base = "0{D01A31CE-4F50-493B-908A-A6FC41C08159}{46A7D6BD-F8FA-4470-9F96-9DE999558C6F}"
+Attribute VB_Base = "0{28CA6E48-D927-47B7-942D-FB088EFC4066}{E7506A82-5883-4367-9CCF-D983AE1A717A}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
