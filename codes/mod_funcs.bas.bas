@@ -1,7 +1,155 @@
 Attribute VB_Name = "mod_funcs"
 
+' Purpose: Applies "Business Blue" formatting with conditional header lines.
+' @param nHeaderRows: Number of rows to treat as header.
+' @return: None
+Public Sub ApplyTableStyle(nHeaderRows As Long)
+    Dim rngFull As Range
+    Dim rngHeader As Range
+    Dim rngBody As Range
+    Dim checkCell As Range
+    Dim r As Long, c As Long
+    
+    On Error GoTo ErrorHandler
+    Application.ScreenUpdating = False
+    
+    ' 1. Determine Target Range
+    If Selection.Cells.CountLarge = 1 Then
+        Set rngFull = Selection.CurrentRegion
+    Else
+        Set rngFull = Selection
+    End If
+    
+    ' Validation
+    If rngFull.Rows.count <= nHeaderRows Then
+        MsgBox "Range is too small for " & nHeaderRows & " header rows.", vbExclamation
+        GoTo ExitHandler
+    End If
+    
+    ' 2. Define Header and Body Ranges
+    Set rngHeader = rngFull.Resize(nHeaderRows, rngFull.Columns.count)
+    Set rngBody = rngFull.offset(nHeaderRows, 0).Resize(rngFull.Rows.count - nHeaderRows, rngFull.Columns.count)
+    
+    ' ---------------------------------------------------------
+    ' 3. APPLY HEADER STYLES
+    ' ---------------------------------------------------------
+    With rngHeader
+        ' Basic Formatting
+        .Interior.Color = RGB(0, 112, 192) ' Business Blue
+        .Font.Color = vbWhite
+        .Font.Bold = True
+        .Font.Name = "Arial"
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        
+        ' Clear all existing borders first
+        .Borders.LineStyle = xlNone
+        
+        ' A. Vertical Separators (Always White)
+        With .Borders(xlInsideVertical)
+            .LineStyle = xlContinuous
+            .Color = vbWhite
+            .Weight = xlThin
+        End With
+    End With
+    
+    ' B. Conditional Horizontal Separators
+    ' Only draw white line if the cell BELOW is not empty.
+    If nHeaderRows > 1 Then
+        For r = 1 To nHeaderRows - 1
+            For c = 1 To rngHeader.Columns.count
+                If Len(Trim(rngHeader.Cells(r + 1, c).Value)) > 0 Then
+                    With rngHeader.Cells(r, c).Borders(xlEdgeBottom)
+                        .LineStyle = xlContinuous
+                        .Color = vbWhite
+                        .Weight = xlThin
+                    End With
+                End If
+            Next c
+        Next r
+    End If
+    
+    ' C. Header Bottom Border (Divider between Header and Body)
+    With rngHeader.Borders(xlEdgeBottom)
+        .LineStyle = xlContinuous
+        .Color = RGB(0, 50, 100) ' Dark Blue
+        .Weight = xlMedium
+    End With
+    
+    ' ---------------------------------------------------------
+    ' 4. APPLY BODY STYLES
+    ' ---------------------------------------------------------
+    With rngBody
+        .Interior.pattern = xlNone
+        .Borders.LineStyle = xlNone
+        
+        ' A. Inner Horizontal Gray Lines (Between rows)
+        With .Borders(xlInsideHorizontal)
+            .LineStyle = xlContinuous
+            .Color = RGB(217, 217, 217) ' Light Gray
+            .Weight = xlThin
+        End With
+        
+        ' B. Bottom Horizontal Gray Line (For the last row) -> ADDED THIS
+        With .Borders(xlEdgeBottom)
+            .LineStyle = xlContinuous
+            .Color = RGB(217, 217, 217) ' Light Gray
+            .Weight = xlThin
+        End With
+    End With
+    
+    ' ---------------------------------------------------------
+    ' 5. SMART ALIGNMENT
+    ' ---------------------------------------------------------
+    For c = 1 To rngBody.Columns.count
+        Set checkCell = rngBody.Cells(1, c)
+        
+        ' Logic: Date=Left, Number=Right, Text=Left
+        If IsDate(checkCell.Value) Then
+            rngBody.Columns(c).HorizontalAlignment = xlLeft
+        ElseIf IsNumeric(checkCell.Value) And Not IsEmpty(checkCell.Value) Then
+            rngBody.Columns(c).HorizontalAlignment = xlRight
+        Else
+            rngBody.Columns(c).HorizontalAlignment = xlLeft
+        End If
+    Next c
+    
+    ' ---------------------------------------------------------
+    ' 6. LAYOUT (FreezePanes Removed)
+    ' ---------------------------------------------------------
+    rngFull.Columns.AutoFit
+    
+    ' Cap width at 50
+    For c = 1 To rngFull.Columns.count
+        If rngFull.Columns(c).ColumnWidth > 50 Then
+            rngFull.Columns(c).ColumnWidth = 50
+            rngFull.Columns(c).WrapText = True
+        Else
+            rngFull.Columns(c).WrapText = False
+        End If
+    Next c
+    
+    ' Row Heights
+    rngHeader.RowHeight = 20
+    rngBody.RowHeight = 16.5
+    
+    ' Reset selection to top-left
+    rngFull.Cells(1, 1).Select
 
+ExitHandler:
+    Application.ScreenUpdating = True
+    Exit Sub
 
+ErrorHandler:
+    MsgBox "Error in ApplyTableStyle: " & Err.Description, vbExclamation
+    Resume ExitHandler
+End Sub
+
+'+==========================================================+
+'|                                                          |
+'|                        <-- SECTION END -->               |
+'|                                                          |
+'+==========================================================+
 ' Purpose: Convert range to Markdown Table format
 ' @param rng: Source Range
 ' @return: String containing Markdown text

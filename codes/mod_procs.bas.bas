@@ -1,5 +1,16 @@
 Attribute VB_Name = "mod_procs"
 ' ==============================================================================
+' Purpose: Entry point for the Format Table Ribbon button.
+' ==============================================================================
+Public Sub LNS_ShowFormatDialog(control As IRibbonControl)
+    If ActiveWorkbook Is Nothing Then Exit Sub
+    
+    ' Show the mini configuration form
+    ' (Ensure userform is named 'frm_format_mini')
+    frm_format_mini.Show
+End Sub
+
+' ==============================================================================
 ' Purpose: Launches the Duplicate Checker Wizard (frm_duplicate_check).
 '          1. Checks if a workbook is active.
 '          2. Checks if the selection is valid (Range).
