@@ -1,4 +1,7 @@
 Attribute VB_Name = "mod_funcs"
+
+
+
 ' Purpose: Convert range to Markdown Table format
 ' @param rng: Source Range
 ' @return: String containing Markdown text

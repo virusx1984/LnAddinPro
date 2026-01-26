@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_gen_time_series"
-Attribute VB_Base = "0{B4DC4C3B-D455-461A-9517-385056C96D4E}{ECE053A2-4291-4B66-8B21-DE5323EDC93D}"
+Attribute VB_Base = "0{3FE4A133-BAC0-4800-9F80-93C256A2DB25}{85AEE97F-97EC-4CF0-BD2A-6669B69347F2}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True

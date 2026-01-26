@@ -1,5 +1,5 @@
 Attribute VB_Name = "frm_code_export"
-Attribute VB_Base = "0{4C10DBA4-8EE2-4018-B213-E638508768AF}{DBF3C9BE-053A-4EC4-8543-F23EDDFACDB4}"
+Attribute VB_Base = "0{DD509B4A-3C4C-4A62-AEFD-D4EB0275FB68}{7C985C20-DD62-4BB0-91D1-0B76F61C9AEF}"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True

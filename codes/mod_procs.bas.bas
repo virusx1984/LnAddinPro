@@ -1,5 +1,34 @@
 Attribute VB_Name = "mod_procs"
 ' ==============================================================================
+' Purpose: Launches the Duplicate Checker Wizard (frm_duplicate_check).
+'          1. Checks if a workbook is active.
+'          2. Checks if the selection is valid (Range).
+'          3. Shows the UserForm.
+' ==============================================================================
+Public Sub LNS_ShowDuplicateChecker(control As IRibbonControl)
+    
+    ' 1. Check if a Workbook is open
+    If ActiveWorkbook Is Nothing Then
+        MsgBox "Please open a workbook first.", vbExclamation, "LnAddinPro"
+        Exit Sub
+    End If
+    
+    ' 2. Check if selection is a Range (Optional safety check matching your style)
+    If TypeName(Selection) <> "Range" Then
+        MsgBox "Please select a range first.", vbExclamation, "LnAddinPro"
+        Exit Sub
+    End If
+    
+    ' 3. Load and Show the UserForm
+    '    Note: The form logic (frm_duplicate_check) handles the specific
+    '    limit checks (100k cells) upon initialization or analysis.
+    Load frm_duplicate_check
+    frm_duplicate_check.Show
+    
+End Sub
+
+
+' ==============================================================================
 ' Purpose: Colors selected cells based on Boolean values.
 '          True  -> Green (vbGreen)
 '          False -> Red (vbRed)
