@@ -1,36 +1,20 @@
-Attribute VB_Name = "frm_json_export"
-Attribute VB_Base = "0{6B8BD014-5F6A-4D51-B4B6-112C245D8C8A}{09C83B49-52B0-4AC7-9B0D-7FC96F805F44}"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
-Attribute VB_TemplateDerived = False
-Attribute VB_Customizable = False
 ' UserForm: frm_json_export
 ' Purpose: Dynamic Wizard with File Dialog and improved layout.
 Option Explicit
 
 ' --- 1. Event Handler Declarations ---
 Public WithEvents btnValidate As MSForms.CommandButton
-Attribute btnValidate.VB_VarHelpID = -1
 Public WithEvents btnReset As MSForms.CommandButton
-Attribute btnReset.VB_VarHelpID = -1
 
 ' Config Role Buttons
 Public WithEvents btnSetCate As MSForms.CommandButton
-Attribute btnSetCate.VB_VarHelpID = -1
 Public WithEvents btnSetAgg As MSForms.CommandButton
-Attribute btnSetAgg.VB_VarHelpID = -1
 Public WithEvents btnSetFormat As MSForms.CommandButton
-Attribute btnSetFormat.VB_VarHelpID = -1
 
 ' File & Action Buttons
 Public WithEvents btnBrowse As MSForms.CommandButton
-Attribute btnBrowse.VB_VarHelpID = -1
 Public WithEvents btnRun As MSForms.CommandButton
-Attribute btnRun.VB_VarHelpID = -1
 Public WithEvents btnClose As MSForms.CommandButton
-Attribute btnClose.VB_VarHelpID = -1
 
 ' --- 2. Control References ---
 Public refRangeSource As Object
@@ -371,5 +355,4 @@ End Sub
 Private Sub ToggleInputs(st As Boolean)
     If Not refRangeSource Is Nothing Then refRangeSource.Enabled = st
     btnValidate.Enabled = st
-End Sub
-
+End Sub

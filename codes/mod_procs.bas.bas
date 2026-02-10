@@ -1,4 +1,3 @@
-Attribute VB_Name = "mod_procs"
 ' ==============================================================================
 ' Purpose: Entry point for the Format Table Ribbon button.
 ' ==============================================================================
@@ -197,4 +196,4 @@ Public Sub LNS_ShowCompareForm(control As IRibbonControl)
     
     ' Display the form
     frm_compare_setup.Show
-End Sub
+End Sub

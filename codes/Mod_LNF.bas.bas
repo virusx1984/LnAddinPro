@@ -1,4 +1,3 @@
-Attribute VB_Name = "Mod_LNF"
 Option Explicit
 
 ' ==============================================================================
@@ -128,8 +127,6 @@ End Sub
 Public Function LNF_Join(ByVal sourceRange As Range, ByVal joinString As String, _
                          Optional ByVal leftSurround As String = "", _
                          Optional ByVal rightSurround As String = "") As String
-Attribute LNF_Join.VB_Description = "Concatenates text from a range into a single string with optional delimiters and surrounding characters."
-Attribute LNF_Join.VB_ProcData.VB_Invoke_Func = " \n20"
     
     Dim cell As Range
     Dim resultString As String
@@ -163,8 +160,6 @@ End Function
 ' ==============================================================================
 Public Function LNF_RegexExtract(ByVal sourceText As String, ByVal pattern As String, _
                                  Optional ByVal ignoreCase As Boolean = True) As String
-Attribute LNF_RegexExtract.VB_Description = "Extracts the first substring matching a Regular Expression pattern."
-Attribute LNF_RegexExtract.VB_ProcData.VB_Invoke_Func = " \n20"
     Dim regEx As Object
     Dim matches As Object
     
@@ -193,8 +188,6 @@ End Function
 '           Handles decimal points and leading negative signs.
 ' ==============================================================================
 Public Function LNF_ExtractNumber(ByVal sourceText As String) As Double
-Attribute LNF_ExtractNumber.VB_Description = "Removes non-numeric characters from a string, keeping only digits, decimal points, and leading negative signs."
-Attribute LNF_ExtractNumber.VB_ProcData.VB_Invoke_Func = " \n20"
     Dim i As Integer
     Dim strResult As String
     Dim char As String
@@ -234,8 +227,6 @@ End Function
 '           More reliable than UsedRange.
 ' ==============================================================================
 Public Function LNF_GetLastRow(ByVal ws As Worksheet, Optional ByVal col As Variant = 1) As Long
-Attribute LNF_GetLastRow.VB_Description = "Returns the row number of the last non-empty cell in a specific column."
-Attribute LNF_GetLastRow.VB_ProcData.VB_Invoke_Func = " \n20"
     On Error Resume Next
     ' Equivalent to Ctrl+Up from the bottom of the sheet
     LNF_GetLastRow = ws.Cells(ws.Rows.count, col).End(xlUp).Row
@@ -247,8 +238,6 @@ End Function
 ' Purpose:  Checks if a value exists in a Range or Array.
 ' ==============================================================================
 Public Function LNF_Exists(ByVal valueToFind As Variant, ByVal sourceContainer As Variant) As Boolean
-Attribute LNF_Exists.VB_Description = "Checks if a specific value exists within a Range or an Array."
-Attribute LNF_Exists.VB_ProcData.VB_Invoke_Func = " \n20"
     Dim item As Variant
     
     LNF_Exists = False
@@ -278,8 +267,6 @@ End Function
 ' ==============================================================================
 Public Function LNF_VLookupNth(ByVal lookupVal As Variant, ByVal searchRng As Range, _
                                ByVal returnColOffset As Integer, ByVal matchIndex As Integer) As Variant
-Attribute LNF_VLookupNth.VB_Description = "Advanced VLookup that retrieves the N-th match instead of just the first one."
-Attribute LNF_VLookupNth.VB_ProcData.VB_Invoke_Func = " \n20"
     Dim cell As Range
     Dim count As Integer
     
@@ -295,5 +282,4 @@ Attribute LNF_VLookupNth.VB_ProcData.VB_Invoke_Func = " \n20"
             End If
         End If
     Next cell
-End Function
-
+End Function

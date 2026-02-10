@@ -1,4 +1,3 @@
-Attribute VB_Name = "JsonConverter"
 ''
 ' VBA-JSON v2.3.1
 ' (c) Tim Hall - https://github.com/VBA-tools/VBA-JSON
@@ -1120,4 +1119,4 @@ Private Function utc_SystemTimeToDate(utc_Value As utc_SYSTEMTIME) As Date
         TimeSerial(utc_Value.utc_wHour, utc_Value.utc_wMinute, utc_Value.utc_wSecond)
 End Function
 
-#End If
+#End If

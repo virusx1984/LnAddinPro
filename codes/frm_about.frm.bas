@@ -1,17 +1,8 @@
-Attribute VB_Name = "frm_about"
-Attribute VB_Base = "0{C9A82A43-8CBF-485A-86E2-02E02F743DB3}{4686EAB3-42E9-4FBE-9FF8-E0A4EAADD34E}"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
-Attribute VB_TemplateDerived = False
-Attribute VB_Customizable = False
 ' UserForm: frm_about
 ' Purpose: Display Add-in information (Version, Author, Copyright).
 Option Explicit
 
 Public WithEvents btnOK As MSForms.CommandButton
-Attribute btnOK.VB_VarHelpID = -1
 
 Private Sub UserForm_Initialize()
     ' --- Setup Form ---
@@ -41,7 +32,7 @@ Private Sub UserForm_Initialize()
     
     ' --- 2. Version ---
     With Me.Controls.Add("Forms.Label.1", "lblVersion")
-        .Caption = "Version 1.0.5"
+        .Caption = "Version 1.0.6"
         .Left = MARGIN: .Top = currentTop: .Width = LABEL_W: .Height = 15
         .Font.Name = "Segoe UI"
         .Font.Size = 10
@@ -85,5 +76,4 @@ End Sub
 
 Private Sub btnOK_Click()
     Unload Me
-End Sub
-
+End Sub

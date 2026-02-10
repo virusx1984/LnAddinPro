@@ -1,4 +1,3 @@
-Attribute VB_Name = "mod_demo"
 Sub TestJsonWithFormat()
     Dim rng As Range
     Dim typeDict As Object
@@ -31,4 +30,4 @@ Sub TestJsonWithFormat()
     jsonStr = RangeToCompactJson(rng, typeDict, fmtDict)
     
     Debug.Print jsonStr
-End Sub
+End Sub

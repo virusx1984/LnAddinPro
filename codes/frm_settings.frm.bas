@@ -1,17 +1,8 @@
-Attribute VB_Name = "frm_settings"
-Attribute VB_Base = "0{4E2E681A-9ED3-40E7-A409-97C62B7AB900}{E93C036F-340C-4034-88FB-D1AF21385A65}"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
-Attribute VB_TemplateDerived = False
-Attribute VB_Customizable = False
 Option Explicit
 
 ' --- Event Handlers for Dynamic Controls ---
 ' We declare this WithEvents so we can capture the Click event
 Public WithEvents btnSave As MSForms.CommandButton
-Attribute btnSave.VB_VarHelpID = -1
 
 ' --- Control References ---
 ' We keep references to these to access their properties easily later
@@ -136,4 +127,4 @@ Private Sub btnSave_Click()
     
     ' Close the form
     Unload Me
-End Sub
+End Sub

@@ -1,23 +1,11 @@
-Attribute VB_Name = "frm_duplicate_check"
-Attribute VB_Base = "0{5A93E12F-7B1B-4F61-8C08-70CC263868B4}{F072B9F0-41B7-4D6F-A0B7-4F58E8BBFF9F}"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
-Attribute VB_TemplateDerived = False
-Attribute VB_Customizable = False
 ' UserForm: frm_duplicate_check
 Option Explicit
 
 ' --- Event Handlers for Dynamic Controls ---
 Public WithEvents btnAnalyze As MSForms.CommandButton
-Attribute btnAnalyze.VB_VarHelpID = -1
 Public WithEvents btnHighlight As MSForms.CommandButton
-Attribute btnHighlight.VB_VarHelpID = -1
 Public WithEvents btnSelect As MSForms.CommandButton
-Attribute btnSelect.VB_VarHelpID = -1
 Public WithEvents btnClose As MSForms.CommandButton
-Attribute btnClose.VB_VarHelpID = -1
 
 ' --- Control References ---
 Private refRange As Object          ' RefEdit or TextBox
@@ -279,5 +267,4 @@ End Sub
 Private Sub refRange_Change()
     ' Optional: Re-populate columns on change (debounce recommended in real apps)
     ' keeping simple for now
-End Sub
-
+End Sub

@@ -1,29 +1,15 @@
-Attribute VB_Name = "frm_code_export"
-Attribute VB_Base = "0{DD509B4A-3C4C-4A62-AEFD-D4EB0275FB68}{7C985C20-DD62-4BB0-91D1-0B76F61C9AEF}"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
-Attribute VB_TemplateDerived = False
-Attribute VB_Customizable = False
 ' UserForm: frm_code_export
 ' Purpose: UI for selecting range and outputting Markdown/HTML code.
 Option Explicit
 
 ' --- Controls ---
 Public WithEvents btnRun As MSForms.CommandButton
-Attribute btnRun.VB_VarHelpID = -1
 Public WithEvents btnCopy As MSForms.CommandButton
-Attribute btnCopy.VB_VarHelpID = -1
 Public WithEvents btnClose As MSForms.CommandButton
-Attribute btnClose.VB_VarHelpID = -1
 
 Public WithEvents optMarkdown As MSForms.OptionButton
-Attribute optMarkdown.VB_VarHelpID = -1
 Public WithEvents optHTML As MSForms.OptionButton
-Attribute optHTML.VB_VarHelpID = -1
 Public WithEvents chkBootstrap As MSForms.CheckBox
-Attribute chkBootstrap.VB_VarHelpID = -1
 
 Public refRange As Object
 Public txtResult As MSForms.TextBox
@@ -173,4 +159,4 @@ End Sub
 
 Private Sub btnClose_Click()
     Unload Me
-End Sub
+End Sub

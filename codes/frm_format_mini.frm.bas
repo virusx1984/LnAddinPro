@@ -1,22 +1,11 @@
-Attribute VB_Name = "frm_format_mini"
-Attribute VB_Base = "0{2C1E4298-FD44-4FDB-8D11-5553C357DE55}{C2058677-FF77-4968-A863-008D4B1C15FA}"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
-Attribute VB_TemplateDerived = False
-Attribute VB_Customizable = False
 ' UserForm: frm_format_mini
 ' Purpose: A tiny dialog to ask for Header Row count. Default is 1.
 Option Explicit
 
 ' Define controls with events
 Private WithEvents lblPrompt As MSForms.Label
-Attribute lblPrompt.VB_VarHelpID = -1
 Private WithEvents txtRows As MSForms.TextBox
-Attribute txtRows.VB_VarHelpID = -1
 Private WithEvents btnRun As MSForms.CommandButton
-Attribute btnRun.VB_VarHelpID = -1
 
 ' ==============================================================================
 ' INITIALIZATION
@@ -88,4 +77,4 @@ Private Sub btnRun_Click()
     Call ApplyTableStyle(n)
     
     Unload Me
-End Sub
+End Sub

@@ -1,5 +1,3 @@
-Attribute VB_Name = "mod_funcs"
-
 ' Purpose: Applies "Business Blue" formatting with conditional header lines.
 ' @param nHeaderRows: Number of rows to treat as header.
 ' @return: None
@@ -72,8 +70,8 @@ Public Sub ApplyTableStyle(nHeaderRows As Long)
     ' C. Header Bottom Border (Divider between Header and Body)
     With rngHeader.Borders(xlEdgeBottom)
         .LineStyle = xlContinuous
-        .Color = RGB(0, 50, 100) ' Dark Blue
-        .Weight = xlMedium
+        .Color = RGB(217, 217, 217) ' Light Gray
+        .Weight = xlThin
     End With
     
     ' ---------------------------------------------------------
@@ -646,7 +644,7 @@ CheckIgnore:
             status = "Right Only"
         End If
         
-        If Not hasDiff And (isT1Present And isT2Present) Then GoTo NextKey
+'        If Not hasDiff And (isT1Present And isT2Present) Then GoTo NextKey
 
         Dim rowResult As Object: Set rowResult = CreateObject("Scripting.Dictionary")
         rowResult.Add "Status", status
@@ -1136,5 +1134,4 @@ End Function
 '|                                                          |
 '|                        <-- SECTION END -->               |
 '|                                                          |
-'+==========================================================+
-
+'+==========================================================+

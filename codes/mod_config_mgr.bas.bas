@@ -1,4 +1,3 @@
-Attribute VB_Name = "mod_config_mgr"
 ' Module: mod_config_mgr
 Option Explicit
 
@@ -72,4 +71,4 @@ Public Sub SaveConfigToJson(filePath As String, jsonDict As Scripting.Dictionary
     Set ts = fso.CreateTextFile(filePath, True)
     ts.Write jsonString
     ts.Close
-End Sub
+End Sub

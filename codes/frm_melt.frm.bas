@@ -1,18 +1,8 @@
-Attribute VB_Name = "frm_melt"
-Attribute VB_Base = "0{1D311CFA-D246-42EC-9088-571E1339BC3C}{C7CF36E9-6C79-4EA0-A924-4E3713DD5C6F}"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
-Attribute VB_TemplateDerived = False
-Attribute VB_Customizable = False
 ' UserForm: frm_melt
 Option Explicit
 
 Public WithEvents btnRun As MSForms.CommandButton
-Attribute btnRun.VB_VarHelpID = -1
 Public WithEvents btnCancel As MSForms.CommandButton
-Attribute btnCancel.VB_VarHelpID = -1
 
 Private Sub UserForm_Initialize()
     ' Purpose: Dynamically create and configure controls on the UserForm.
@@ -215,4 +205,4 @@ End Sub
 Private Sub btnCancel_Click()
     ' Close the form without performing any action
     Unload Me
-End Sub
+End Sub

@@ -1,18 +1,8 @@
-Attribute VB_Name = "frm_gen_time_series"
-Attribute VB_Base = "0{3FE4A133-BAC0-4800-9F80-93C256A2DB25}{85AEE97F-97EC-4CF0-BD2A-6669B69347F2}"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
-Attribute VB_TemplateDerived = False
-Attribute VB_Customizable = False
 Option Explicit
 
 ' Declare CommandButton variables using WithEvents to capture the Click event
 Public WithEvents cmdExecute As MSForms.CommandButton
-Attribute cmdExecute.VB_VarHelpID = -1
 Public WithEvents cmdClose As MSForms.CommandButton
-Attribute cmdClose.VB_VarHelpID = -1
 
 ' Declare input controls as Public Object
 Public txtIntervalType As Object
@@ -218,4 +208,4 @@ End Sub
 
 Private Sub cmdClose_Click()
     Unload Me
-End Sub
+End Sub

@@ -1,11 +1,3 @@
-Attribute VB_Name = "frm_compare_setup"
-Attribute VB_Base = "0{397BF4AE-F218-46D6-BDE0-F991BA3FB2EE}{51A69BCE-DC0B-4D17-86F2-C3830F4131E5}"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
-Attribute VB_TemplateDerived = False
-Attribute VB_Customizable = False
 ' UserForm: frm_compare_setup
 ' Purpose: Complete Wizard with Range Selection, Column Roles, Ordering, Formatting, and Execution.
 ' UPDATED: Added Re-ordering buttons (Up/Down) and passing sorted Compare columns.
@@ -16,37 +8,24 @@ Option Explicit
 ' Declare these at the very top of the UserForm Code
 ' ==============================================================================
 Public WithEvents btnValidate As MSForms.CommandButton
-Attribute btnValidate.VB_VarHelpID = -1
 Public WithEvents btnReset As MSForms.CommandButton
-Attribute btnReset.VB_VarHelpID = -1
 Public WithEvents chkNewSheet As MSForms.CheckBox
-Attribute chkNewSheet.VB_VarHelpID = -1
 
 ' Config Role Buttons
 Public WithEvents btnSetIndex As MSForms.CommandButton
-Attribute btnSetIndex.VB_VarHelpID = -1
 Public WithEvents btnSetCompare As MSForms.CommandButton
-Attribute btnSetCompare.VB_VarHelpID = -1
 Public WithEvents btnSetIgnore As MSForms.CommandButton
-Attribute btnSetIgnore.VB_VarHelpID = -1
 Public WithEvents btnRefUseA As MSForms.CommandButton
-Attribute btnRefUseA.VB_VarHelpID = -1
 Public WithEvents btnRefUseB As MSForms.CommandButton
-Attribute btnRefUseB.VB_VarHelpID = -1
 Public WithEvents btnSetFormat As MSForms.CommandButton
-Attribute btnSetFormat.VB_VarHelpID = -1
 
 ' Reorder Buttons
 Public WithEvents btnUp As MSForms.CommandButton
-Attribute btnUp.VB_VarHelpID = -1
 Public WithEvents btnDown As MSForms.CommandButton
-Attribute btnDown.VB_VarHelpID = -1
 
 ' Action Buttons
 Public WithEvents btnRun As MSForms.CommandButton
-Attribute btnRun.VB_VarHelpID = -1
 Public WithEvents btnClose As MSForms.CommandButton
-Attribute btnClose.VB_VarHelpID = -1
 
 ' Control References
 Public refRange1 As Object
@@ -759,5 +738,4 @@ Private Function StringToArray(ByVal strList As String) As Variant
     End If
     If Right(strList, 1) = "," Then strList = Left(strList, Len(strList) - 1)
     StringToArray = Split(strList, ",")
-End Function
-
+End Function
