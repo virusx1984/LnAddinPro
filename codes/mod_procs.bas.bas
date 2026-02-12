@@ -1,4 +1,87 @@
 ' ==============================================================================
+' Purpose: Scans the active sheet for External links, LNF_ functions, and Cross-Sheet references.
+' ==============================================================================
+' Entry point from Ribbon
+Public Sub LNS_ShowLinkChecker(control As IRibbonControl)
+    Dim rngFormulas As Range
+    Dim cell As Range
+    Dim scanData() As Variant
+    Dim count As Long
+    Dim fmla As String
+    Dim isExt As Boolean, isLNF As Boolean, isInt As Boolean
+    
+    ' 1. Quick Check: Are there any formulas?
+    On Error Resume Next
+    Set rngFormulas = ActiveSheet.UsedRange.SpecialCells(xlCellTypeFormulas)
+    On Error GoTo 0
+    
+    If rngFormulas Is Nothing Then
+        MsgBox "No formulas found in the active sheet.", vbInformation, "Link Checker"
+        Exit Sub
+    End If
+    
+    ' 2. Scan Logic
+    ' We surmise the max possible size to avoid ReDim Preserve inside loop for speed
+    ReDim scanData(1 To rngFormulas.Cells.count, 1 To 3)
+    count = 0
+    
+    Application.ScreenUpdating = False
+    
+    For Each cell In rngFormulas
+        fmla = cell.Formula
+        isExt = False: isLNF = False: isInt = False
+        
+        ' Priority 1: External Links ([)
+        If InStr(1, fmla, "[", vbBinaryCompare) > 0 Then
+            isExt = True
+        ' Priority 2: LNF Custom Functions
+        ElseIf InStr(1, fmla, "LNF_", vbTextCompare) > 0 Then
+            isLNF = True
+        ' Priority 3: Internal Cross-Sheet (!)
+        ElseIf InStr(1, fmla, "!", vbBinaryCompare) > 0 Then
+            isInt = True
+        End If
+        
+        If isExt Or isLNF Or isInt Then
+            count = count + 1
+            scanData(count, 1) = cell.Address(False, False)
+            
+            If isExt Then scanData(count, 2) = "External"
+            If isLNF Then scanData(count, 2) = "LNF_Func"
+            If isInt Then scanData(count, 2) = "Internal"
+            
+            scanData(count, 3) = fmla
+        End If
+    Next cell
+    
+    Application.ScreenUpdating = True
+    
+    ' 3. Result Handling
+    If count = 0 Then
+        MsgBox "Clean Sheet! No external, LNF, or cross-sheet links found.", vbInformation, "Link Checker"
+    Else
+        ' Trim array to actual count
+        Dim finalData() As Variant
+        Dim i As Long, j As Long
+        ReDim finalData(1 To count, 1 To 3)
+        
+        For i = 1 To count
+            For j = 1 To 3
+                finalData(i, j) = scanData(i, j)
+            Next j
+        Next i
+        
+        ' 4. Initialize Dynamic Form
+        ' Note: Ensure the UserForm is named "frm_link_checker"
+        Dim frm As New frm_link_checker
+        frm.LoadData finalData
+        frm.Show vbModeless ' Modeless allows interaction with sheet
+    End If
+    
+End Sub
+
+
+' ==============================================================================
 ' Purpose: Entry point for the Format Table Ribbon button.
 ' ==============================================================================
 Public Sub LNS_ShowFormatDialog(control As IRibbonControl)

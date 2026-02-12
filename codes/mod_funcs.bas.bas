@@ -1,3 +1,19 @@
+' Define a simple Type to hold our data temporarily
+Private Type LinkData
+    Address As String
+    category As String ' "External", "LNF", "Internal"
+    Formula As String
+    CellObj As Range
+End Type
+
+
+
+'+==========================================================+
+'|                                                          |
+'|                        <-- SECTION END -->               |
+'|                                                          |
+'+==========================================================+
+
 ' Purpose: Applies "Business Blue" formatting with conditional header lines.
 ' @param nHeaderRows: Number of rows to treat as header.
 ' @return: None

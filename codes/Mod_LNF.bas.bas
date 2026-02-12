@@ -55,7 +55,7 @@ Public Sub Register_LNF_Functions()
     Application.MacroOptions _
         Macro:="LNF_Join", _
         Description:="Concatenates text from a range into a single string with optional delimiters and surrounding characters.", _
-        Category:=categoryName, _
+        category:=categoryName, _
         ArgumentDescriptions:=Array( _
             "sourceRange: The range of cells to join.", _
             "joinString: The delimiter string (e.g., comma).", _
@@ -67,7 +67,7 @@ Public Sub Register_LNF_Functions()
     Application.MacroOptions _
         Macro:="LNF_RegexExtract", _
         Description:="Extracts the first substring matching a Regular Expression pattern.", _
-        Category:=categoryName, _
+        category:=categoryName, _
         ArgumentDescriptions:=Array( _
             "sourceText: The original text to search.", _
             "pattern: The Regex pattern (e.g., ""\d+"" for numbers).", _
@@ -78,7 +78,7 @@ Public Sub Register_LNF_Functions()
     Application.MacroOptions _
         Macro:="LNF_ExtractNumber", _
         Description:="Removes non-numeric characters from a string, keeping only digits, decimal points, and leading negative signs.", _
-        Category:=categoryName, _
+        category:=categoryName, _
         ArgumentDescriptions:=Array( _
             "sourceText: The dirty string containing numbers (e.g., ""USD 1,200.00"")." _
         )
@@ -87,7 +87,7 @@ Public Sub Register_LNF_Functions()
     Application.MacroOptions _
         Macro:="LNF_GetLastRow", _
         Description:="Returns the row number of the last non-empty cell in a specific column.", _
-        Category:=categoryName, _
+        category:=categoryName, _
         ArgumentDescriptions:=Array( _
             "ws: The target Worksheet object.", _
             "col: (Optional) The column index (1) or letter (""A""). Default is 1." _
@@ -97,7 +97,7 @@ Public Sub Register_LNF_Functions()
     Application.MacroOptions _
         Macro:="LNF_Exists", _
         Description:="Checks if a specific value exists within a Range or an Array.", _
-        Category:=categoryName, _
+        category:=categoryName, _
         ArgumentDescriptions:=Array( _
             "valueToFind: The value to search for.", _
             "sourceContainer: The search scope (Range object or Array)." _
@@ -107,7 +107,7 @@ Public Sub Register_LNF_Functions()
     Application.MacroOptions _
         Macro:="LNF_VLookupNth", _
         Description:="Advanced VLookup that retrieves the N-th match instead of just the first one.", _
-        Category:=categoryName, _
+        category:=categoryName, _
         ArgumentDescriptions:=Array( _
             "lookupVal: The value to look up.", _
             "searchRng: The range to search within (e.g., Column A).", _
