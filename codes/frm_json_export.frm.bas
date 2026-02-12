@@ -83,13 +83,13 @@ Private Sub UserForm_Initialize()
     Dim colW3 As Double: colW3 = 80
     
     With frameConfig.Controls.Add("Forms.Label.1", "lblHdr1")
-        .Caption = "Column Name": .Left = 10: .Top = 20: .Width = colW1: .Font.Bold = True: .ForeColor = &H8000000D
+        .Caption = "Column Name": .Left = 10: .Top = 20: .Width = colW1: .Font.bold = True: .ForeColor = &H8000000D
     End With
     With frameConfig.Controls.Add("Forms.Label.1", "lblHdr2")
-        .Caption = "Type": .Left = 10 + colW1: .Top = 20: .Width = colW2: .Font.Bold = True: .ForeColor = &H8000000D
+        .Caption = "Type": .Left = 10 + colW1: .Top = 20: .Width = colW2: .Font.bold = True: .ForeColor = &H8000000D
     End With
     With frameConfig.Controls.Add("Forms.Label.1", "lblHdr3")
-        .Caption = "Format": .Left = 10 + colW1 + colW2: .Top = 20: .Width = colW3: .Font.Bold = True: .ForeColor = &H8000000D
+        .Caption = "Format": .Left = 10 + colW1 + colW2: .Top = 20: .Width = colW3: .Font.bold = True: .ForeColor = &H8000000D
     End With
     
     Set lstColumns = frameConfig.Controls.Add("Forms.ListBox.1", "lstColumns")
@@ -133,7 +133,7 @@ Private Sub UserForm_Initialize()
     ' SECTION 3: FILE SELECTION
     ' ============================
     With Me.Controls.Add("Forms.Label.1", "lblOutName")
-        .Caption = "3. Output File:": .Left = MARGIN: .Top = currentTop + 5: .Width = LBL_W: .Font.Bold = True
+        .Caption = "3. Output File:": .Left = MARGIN: .Top = currentTop + 5: .Width = LBL_W: .Font.bold = True
     End With
     
     ' Text Box (Locked)
@@ -160,7 +160,7 @@ Private Sub UserForm_Initialize()
     
     Set btnRun = Me.Controls.Add("Forms.CommandButton.1", "btnRun")
     With btnRun
-        .Caption = "Generate JSON": .Left = MARGIN: .Top = currentTop: .Width = 140: .Height = 30: .Font.Bold = True: .Enabled = False
+        .Caption = "Generate JSON": .Left = MARGIN: .Top = currentTop: .Width = 140: .Height = 30: .Font.bold = True: .Enabled = False
     End With
     
     Set btnClose = Me.Controls.Add("Forms.CommandButton.1", "btnClose")

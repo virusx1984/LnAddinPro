@@ -1,204 +1,183 @@
 ' UserForm: frm_link_checker
-' Purpose: Dynamic UI for filtering and viewing link audit results.
+' Purpose: Dynamic UI for Link Audit (Optimized for Large Data).
 Option Explicit
 
-' --- Controls with Events ---
-' Filter Buttons
+' --- Controls ---
 Public WithEvents btnAll As MSForms.CommandButton
 Public WithEvents btnExt As MSForms.CommandButton
 Public WithEvents btnLNF As MSForms.CommandButton
 Public WithEvents btnInt As MSForms.CommandButton
 
-' Main ListBox (Standard ListBox events are tricky with WithEvents,
-' usually require a Class wrapper, but Click often works if declared properly
-' or we use the MouseUp event if Click fails in dynamic context.
-' For simplicity in this structure, we use MSForms.ListBox directly)
 Public WithEvents lstResults As MSForms.ListBox
-
-' Footer
 Public WithEvents btnClose As MSForms.CommandButton
-
-' Static Controls (No events needed logic-wise)
 Private lblCount As MSForms.Label
+Private lblStatus As MSForms.Label ' New: Show Total vs Displayed
 
-' --- Data Storage ---
-Private m_RawData As Variant ' Full dataset
+' --- Data ---
+Private m_RawData As Variant    ' The subset of data for display (Max 2000 rows)
+Private m_TotalFound As Long    ' The actual total count found in sheet
 
-' --- Layout Constants ---
+' --- Layout ---
 Const MARGIN As Long = 10
 Const BTN_H As Long = 24
 Const GAP As Long = 5
 
-' ==============================================================================
-' INITIALIZATION & LAYOUT
-' ==============================================================================
 Private Sub UserForm_Initialize()
     Me.Caption = "Link & Function Checker"
     Me.Width = 500
     Me.Height = 400
     
+    DrawControls
+End Sub
+
+Private Sub DrawControls()
     Dim currentTop As Long: currentTop = MARGIN
     Dim btnWidth As Long
     
-    ' 1. Filter Buttons (Top Row)
-    ' Calculate width for 4 buttons to fit equally
+    ' 1. Filter Buttons
     btnWidth = (Me.InsideWidth - (MARGIN * 2) - (GAP * 3)) / 4
     
-    Set btnAll = Me.Controls.Add("Forms.CommandButton.1", "btnAll")
-    With btnAll
-        .Caption = "All": .Left = MARGIN: .Top = currentTop
-        .Width = btnWidth: .Height = BTN_H
-        .BackColor = &H80FFFF ' Default Active
-    End With
+    Set btnAll = CreateBtn("btnAll", "All", MARGIN, currentTop, btnWidth)
+    Set btnExt = CreateBtn("btnExt", "External", MARGIN + btnWidth + GAP, currentTop, btnWidth)
+    Set btnLNF = CreateBtn("btnLNF", "LNF_Func", MARGIN + (btnWidth + GAP) * 2, currentTop, btnWidth)
+    Set btnInt = CreateBtn("btnInt", "Internal", MARGIN + (btnWidth + GAP) * 3, currentTop, btnWidth)
     
-    Set btnExt = Me.Controls.Add("Forms.CommandButton.1", "btnExt")
-    With btnExt
-        .Caption = "External": .Left = MARGIN + btnWidth + GAP: .Top = currentTop
-        .Width = btnWidth: .Height = BTN_H
-    End With
-    
-    Set btnLNF = Me.Controls.Add("Forms.CommandButton.1", "btnLNF")
-    With btnLNF
-        .Caption = "LNF_Func": .Left = MARGIN + (btnWidth + GAP) * 2: .Top = currentTop
-        .Width = btnWidth: .Height = BTN_H
-    End With
-    
-    Set btnInt = Me.Controls.Add("Forms.CommandButton.1", "btnInt")
-    With btnInt
-        .Caption = "Internal": .Left = MARGIN + (btnWidth + GAP) * 3: .Top = currentTop
-        .Width = btnWidth: .Height = BTN_H
-    End With
-    
+    btnAll.BackColor = &H80FFFF ' Active default
     currentTop = currentTop + BTN_H + GAP + 5
     
-    ' 2. ListBox Header Labels (Simulated)
-    Dim col1W As Long: col1W = 50
+    ' 2. Headers
+    Dim col1W As Long: col1W = 60
     Dim col2W As Long: col2W = 60
-    ' Remaining width for formula
     
-    With Me.Controls.Add("Forms.Label.1", "lblH1")
-        .Caption = "Address": .Left = MARGIN: .Top = currentTop: .Width = col1W: .Font.Bold = True
-    End With
-    With Me.Controls.Add("Forms.Label.1", "lblH2")
-        .Caption = "Type": .Left = MARGIN + col1W: .Top = currentTop: .Width = col2W: .Font.Bold = True
-    End With
-    With Me.Controls.Add("Forms.Label.1", "lblH3")
-        .Caption = "Formula": .Left = MARGIN + col1W + col2W: .Top = currentTop: .Width = 200: .Font.Bold = True
-    End With
+    CreateLabel "Address", MARGIN, currentTop, col1W, True
+    CreateLabel "Type", MARGIN + col1W, currentTop, col2W, True
+    CreateLabel "Formula", MARGIN + col1W + col2W, currentTop, 200, True
     
     currentTop = currentTop + 12 + GAP
     
-    ' 3. Result ListBox
+    ' 3. ListBox
     Set lstResults = Me.Controls.Add("Forms.ListBox.1", "lstResults")
     With lstResults
         .Left = MARGIN
         .Top = currentTop
         .Width = Me.InsideWidth - (MARGIN * 2)
-        .Height = Me.InsideHeight - currentTop - BTN_H - MARGIN - 20
+        .Height = Me.InsideHeight - currentTop - BTN_H - MARGIN - 25
         .ColumnCount = 3
         .ColumnWidths = CStr(col1W) & ";" & CStr(col2W) & ";" & CStr(Me.InsideWidth - col1W - col2W - 30)
         .Font.Name = "Segoe UI"
         .Font.Size = 9
     End With
     
-    ' 4. Footer (Count Label + Close Button)
-    Dim footerTop As Long
-    footerTop = lstResults.Top + lstResults.Height + GAP
+    ' 4. Footer
+    Dim footerTop As Long: footerTop = lstResults.Top + lstResults.Height + GAP
     
     Set lblCount = Me.Controls.Add("Forms.Label.1", "lblCount")
     With lblCount
-        .Caption = "Ready": .Left = MARGIN: .Top = footerTop + 5: .Width = 200
-        .ForeColor = &H808080
+        .Caption = "Ready": .Left = MARGIN: .Top = footerTop: .Width = 300: .ForeColor = &H404040
     End With
     
-    Set btnClose = Me.Controls.Add("Forms.CommandButton.1", "btnClose")
-    With btnClose
-        .Caption = "Close": .Left = Me.InsideWidth - 90: .Top = footerTop: .Width = 80: .Height = BTN_H
+    Set btnClose = CreateBtn("btnClose", "Close", Me.InsideWidth - 90, footerTop, 80)
+End Sub
+
+' Helper to create buttons
+Private Function CreateBtn(n As String, c As String, l As Long, t As Long, w As Long) As MSForms.CommandButton
+    Set CreateBtn = Me.Controls.Add("Forms.CommandButton.1", n)
+    With CreateBtn
+        .Caption = c: .Left = l: .Top = t: .Width = w: .Height = BTN_H
+    End With
+End Function
+
+Private Sub CreateLabel(c As String, l As Long, t As Long, w As Long, bold As Boolean)
+    With Me.Controls.Add("Forms.Label.1", "")
+        .Caption = c: .Left = l: .Top = t: .Width = w
+        If bold Then .Font.bold = True
     End With
 End Sub
 
 ' ==============================================================================
-' PUBLIC METHODS
+' LOGIC
 ' ==============================================================================
-Public Sub LoadData(data As Variant)
+
+Public Sub LoadData(data As Variant, totalCnt As Long)
     m_RawData = data
+    m_TotalFound = totalCnt
     FilterList "All"
 End Sub
 
-' ==============================================================================
-' LOGIC HANDLERS
-' ==============================================================================
-
-' --- Filter Buttons ---
-Private Sub btnAll_Click()
-    HighlightButton btnAll
-    FilterList "All"
-End Sub
-
-Private Sub btnExt_Click()
-    HighlightButton btnExt
-    FilterList "External"
-End Sub
-
-Private Sub btnLNF_Click()
-    HighlightButton btnLNF
-    FilterList "LNF_Func"
-End Sub
-
-Private Sub btnInt_Click()
-    HighlightButton btnInt
-    FilterList "Internal"
-End Sub
-
-' Helper to filter data
+' OPTIMIZED FILTER LOGIC: Use Array Assignment
 Private Sub FilterList(category As String)
-    Dim i As Long
-    Dim count As Long
+    Dim i As Long, cnt As Long
+    Dim arrDisplay() As Variant
+    Dim rawRows As Long
     
+    ' Clear current list
     lstResults.Clear
-    If IsEmpty(m_RawData) Then Exit Sub
     
-    count = 0
-    For i = 1 To UBound(m_RawData, 1)
-        Dim rowCat As String
-        rowCat = m_RawData(i, 2)
-        
-        If category = "All" Or rowCat = category Then
-            lstResults.AddItem m_RawData(i, 1)          ' Col 1: Address
-            lstResults.List(lstResults.listCount - 1, 1) = rowCat       ' Col 2: Type
-            lstResults.List(lstResults.listCount - 1, 2) = m_RawData(i, 3) ' Col 3: Formula
-            count = count + 1
+    If IsEmpty(m_RawData) Then
+        lblCount.Caption = "No items."
+        Exit Sub
+    End If
+    
+    rawRows = UBound(m_RawData, 1)
+    
+    ' 1. First Pass: Count matches to size the array
+    cnt = 0
+    For i = 1 To rawRows
+        If category = "All" Or m_RawData(i, 2) = category Then
+            cnt = cnt + 1
         End If
     Next i
     
-    lblCount.Caption = "Items Found: " & count
-End Sub
-
-' Helper to change button colors
-Private Sub HighlightButton(activeBtn As MSForms.CommandButton)
-    ' Reset all to system color
-    btnAll.BackColor = &H8000000F
-    btnExt.BackColor = &H8000000F
-    btnLNF.BackColor = &H8000000F
-    btnInt.BackColor = &H8000000F
+    If cnt = 0 Then
+        lblCount.Caption = "No items found for filter: " & category
+        Exit Sub
+    End If
     
-    ' Highlight active
-    activeBtn.BackColor = &H80FFFF ' Light Yellow
+    ' 2. Second Pass: Fill Display Array
+    ' ListBox.List expects (0 to rows-1, 0 to cols-1)
+    ReDim arrDisplay(0 To cnt - 1, 0 To 2)
+    Dim currIdx As Long
+    currIdx = 0
+    
+    For i = 1 To rawRows
+        If category = "All" Or m_RawData(i, 2) = category Then
+            arrDisplay(currIdx, 0) = m_RawData(i, 1) ' Addr
+            arrDisplay(currIdx, 1) = m_RawData(i, 2) ' Type
+            arrDisplay(currIdx, 2) = m_RawData(i, 3) ' Formula
+            currIdx = currIdx + 1
+        End If
+    Next i
+    
+    ' 3. Bulk Assignment (Instant)
+    lstResults.List = arrDisplay
+    
+    ' 4. Update Status Label
+    Dim msg As String
+    msg = "Showing " & cnt & " items."
+    If m_TotalFound > rawRows Then
+        msg = msg & " (Note: First " & rawRows & " of " & m_TotalFound & " total errors shown)"
+    End If
+    lblCount.Caption = msg
 End Sub
 
-' --- ListBox Interaction ---
+' Button Handlers
+Private Sub btnAll_Click(): ResetColors: btnAll.BackColor = &H80FFFF: FilterList "All": End Sub
+Private Sub btnExt_Click(): ResetColors: btnExt.BackColor = &H80FFFF: FilterList "External": End Sub
+Private Sub btnLNF_Click(): ResetColors: btnLNF.BackColor = &H80FFFF: FilterList "LNF_Func": End Sub
+Private Sub btnInt_Click(): ResetColors: btnInt.BackColor = &H80FFFF: FilterList "Internal": End Sub
+
+Private Sub ResetColors()
+    btnAll.BackColor = &H8000000F: btnExt.BackColor = &H8000000F
+    btnLNF.BackColor = &H8000000F: btnInt.BackColor = &H8000000F
+End Sub
+
 Private Sub lstResults_Click()
-    Dim addr As String
     If lstResults.ListIndex = -1 Then Exit Sub
-    
-    addr = lstResults.List(lstResults.ListIndex, 0)
-    
     On Error Resume Next
-    ActiveSheet.Range(addr).Select
+    ActiveSheet.Range(lstResults.List(lstResults.ListIndex, 0)).Select
     On Error GoTo 0
 End Sub
 
-' --- Footer ---
 Private Sub btnClose_Click()
     Unload Me
 End Sub

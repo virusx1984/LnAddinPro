@@ -183,15 +183,15 @@ Private Sub UserForm_Initialize()
     
     With frameConfig.Controls.Add("Forms.Label.1", "lblHdr1")
         .Caption = "Column Name": .Left = 10: .Top = 20: .Width = colW1
-        .Font.Bold = True: .Font.Size = 9: .ForeColor = &H8000000D
+        .Font.bold = True: .Font.Size = 9: .ForeColor = &H8000000D
     End With
     With frameConfig.Controls.Add("Forms.Label.1", "lblHdr2")
         .Caption = "Role / Status": .Left = 10 + colW1: .Top = 20: .Width = colW2
-        .Font.Bold = True: .Font.Size = 9: .ForeColor = &H8000000D
+        .Font.bold = True: .Font.Size = 9: .ForeColor = &H8000000D
     End With
     With frameConfig.Controls.Add("Forms.Label.1", "lblHdr3")
         .Caption = "Format": .Left = 10 + colW1 + colW2: .Top = 20: .Width = colW3
-        .Font.Bold = True: .Font.Size = 9: .ForeColor = &H8000000D
+        .Font.bold = True: .Font.Size = 9: .ForeColor = &H8000000D
     End With
     
     ' --- LISTBOX ---
@@ -288,7 +288,7 @@ Private Sub UserForm_Initialize()
     ' SECTION 3: OUTPUT (UPDATED)
     ' ============================
     With Me.Controls.Add("Forms.Label.1", "lblOut")
-        .Caption = "4. Output Destination:": .Left = MARGIN: .Top = currentTop + 3: .Width = 150: .Font.Bold = True
+        .Caption = "4. Output Destination:": .Left = MARGIN: .Top = currentTop + 3: .Width = 150: .Font.bold = True
     End With
     currentTop = currentTop + 20
     
@@ -348,7 +348,7 @@ Private Sub UserForm_Initialize()
     ' ============================
     Set btnRun = Me.Controls.Add("Forms.CommandButton.1", "btnRun")
     With btnRun
-        .Caption = "Run Comparison": .Left = Me.InsideWidth - 220: .Top = currentTop: .Width = 120: .Height = 30: .Font.Bold = True: .Enabled = False
+        .Caption = "Run Comparison": .Left = Me.InsideWidth - 220: .Top = currentTop: .Width = 120: .Height = 30: .Font.bold = True: .Enabled = False
     End With
     Set btnClose = Me.Controls.Add("Forms.CommandButton.1", "btnClose")
     With btnClose
@@ -666,7 +666,7 @@ Private Sub btnRun_Click()
         ' Activate the target sheet (New or Existing)
         outputRng.Worksheet.Activate
         outputRng.Resize(rCount, cCount).Value = resultData
-        outputRng.Resize(1, cCount).Font.Bold = True
+        outputRng.Resize(1, cCount).Font.bold = True
         
         ' --- APPLY FORMATTING ---
         If dictFormats.count > 0 Then

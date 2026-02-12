@@ -61,7 +61,7 @@ Private Sub UserForm_Initialize()
         .Caption = "Analyze Cells"
         .Left = MARGIN: .Top = currentTop: .Width = 120: .Height = 28
         .BackColor = &H80FFFF ' Light Yellow
-        .Font.Bold = True
+        .Font.bold = True
     End With
     
     Set btnClose = Me.Controls.Add("Forms.CommandButton.1", "btnClose")
@@ -83,7 +83,7 @@ Private Sub UserForm_Initialize()
     Set lblStatus = frameAction.Controls.Add("Forms.Label.1", "lblStatus")
     With lblStatus
         .Caption = "Status: Waiting..."
-        .Left = 10: .Top = 15: .Width = 300: .Font.Bold = True
+        .Left = 10: .Top = 15: .Width = 300: .Font.bold = True
     End With
     
     Set lblDetail = frameAction.Controls.Add("Forms.Label.1", "lblDetail")

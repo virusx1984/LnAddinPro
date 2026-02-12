@@ -1,16 +1,27 @@
 ' ==============================================================================
 ' Purpose: Scans the active sheet for External links, LNF_ functions, and Cross-Sheet references.
 ' ==============================================================================
-' Entry point from Ribbon
+' Configuration: Max number of items to collect for the UI ListBox
+' Prevents UI freeze when thousands of errors exist.
+Private Const UI_DISPLAY_LIMIT As Long = 200
+
 Public Sub LNS_ShowLinkChecker(control As IRibbonControl)
     Dim rngFormulas As Range
-    Dim cell As Range
-    Dim scanData() As Variant
-    Dim count As Long
+    Dim area As Range
+    Dim vFormulas As Variant
+    Dim arrResults() As Variant
+    
+    Dim r As Long, c As Long
+    Dim i As Long
     Dim fmla As String
+    Dim cellAddr As String
+    
+    Dim count As Long           ' Items collected for display
+    Dim totalFound As Long      ' Total items found (statistics)
+    
     Dim isExt As Boolean, isLNF As Boolean, isInt As Boolean
     
-    ' 1. Quick Check: Are there any formulas?
+    ' 1. Fast Check: Get Formula Cells
     On Error Resume Next
     Set rngFormulas = ActiveSheet.UsedRange.SpecialCells(xlCellTypeFormulas)
     On Error GoTo 0
@@ -20,64 +31,127 @@ Public Sub LNS_ShowLinkChecker(control As IRibbonControl)
         Exit Sub
     End If
     
-    ' 2. Scan Logic
-    ' We surmise the max possible size to avoid ReDim Preserve inside loop for speed
-    ReDim scanData(1 To rngFormulas.Cells.count, 1 To 3)
+    ' 2. Initialize Output Array (Fixed size for speed, trimmed later)
+    ' Format: 1=Address, 2=Type, 3=Formula
+    ReDim arrResults(1 To UI_DISPLAY_LIMIT, 1 To 3)
     count = 0
+    totalFound = 0
     
     Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual ' Pause Calc for speed
     
-    For Each cell In rngFormulas
-        fmla = cell.Formula
-        isExt = False: isLNF = False: isInt = False
+    ' 3. Iterate through Areas (Batch Processing)
+    For Each area In rngFormulas.Areas
         
-        ' Priority 1: External Links ([)
-        If InStr(1, fmla, "[", vbBinaryCompare) > 0 Then
-            isExt = True
-        ' Priority 2: LNF Custom Functions
-        ElseIf InStr(1, fmla, "LNF_", vbTextCompare) > 0 Then
-            isLNF = True
-        ' Priority 3: Internal Cross-Sheet (!)
-        ElseIf InStr(1, fmla, "!", vbBinaryCompare) > 0 Then
-            isInt = True
+        ' Case A: Single Cell Area
+        If area.Cells.count = 1 Then
+            fmla = area.Formula
+            If CheckFormula(fmla, isExt, isLNF, isInt) Then
+                totalFound = totalFound + 1
+                If count < UI_DISPLAY_LIMIT Then
+                    count = count + 1
+                    StoreResult arrResults, count, area.Address(False, False), fmla, isExt, isLNF, isInt
+                End If
+            End If
+            
+        ' Case B: Multi-Cell Area (Read into Array)
+        Else
+            vFormulas = area.Formula ' Copy block to memory (Fastest)
+            
+            ' vFormulas is always 2D array (1 to Rows, 1 to Cols)
+            For r = 1 To UBound(vFormulas, 1)
+                For c = 1 To UBound(vFormulas, 2)
+                    fmla = vFormulas(r, c)
+                    
+                    ' Processing logic in memory
+                    If CheckFormula(fmla, isExt, isLNF, isInt) Then
+                        totalFound = totalFound + 1
+                        
+                        ' Only store if under limit
+                        If count < UI_DISPLAY_LIMIT Then
+                            count = count + 1
+                            ' Calculate Address manually is slow, use .Cells(r,c).Address only when hit
+                            ' Optimization: Relative to Area
+                            cellAddr = area.Cells(r, c).Address(False, False)
+                            StoreResult arrResults, count, cellAddr, fmla, isExt, isLNF, isInt
+                        End If
+                    End If
+                    
+                Next c
+            Next r
         End If
         
-        If isExt Or isLNF Or isInt Then
-            count = count + 1
-            scanData(count, 1) = cell.Address(False, False)
-            
-            If isExt Then scanData(count, 2) = "External"
-            If isLNF Then scanData(count, 2) = "LNF_Func"
-            If isInt Then scanData(count, 2) = "Internal"
-            
-            scanData(count, 3) = fmla
-        End If
-    Next cell
+    Next area
     
+    Application.Calculation = xlCalculationAutomatic
     Application.ScreenUpdating = True
     
-    ' 3. Result Handling
-    If count = 0 Then
-        MsgBox "Clean Sheet! No external, LNF, or cross-sheet links found.", vbInformation, "Link Checker"
+    ' 4. Results Handling
+    If totalFound = 0 Then
+        MsgBox "Clean Sheet! No External, LNF, or Cross-Sheet links found.", vbInformation, "Link Checker"
     Else
-        ' Trim array to actual count
+        ' Trim array to actual stored count
         Dim finalData() As Variant
-        Dim i As Long, j As Long
-        ReDim finalData(1 To count, 1 To 3)
+        Dim j As Long, k As Long
         
-        For i = 1 To count
-            For j = 1 To 3
-                finalData(i, j) = scanData(i, j)
+        If count > 0 Then
+            ReDim finalData(1 To count, 1 To 3)
+            For j = 1 To count
+                For k = 1 To 3
+                    finalData(j, k) = arrResults(j, k)
+                Next k
             Next j
-        Next i
+        End If
         
-        ' 4. Initialize Dynamic Form
-        ' Note: Ensure the UserForm is named "frm_link_checker"
+        ' Initialize Form with Data AND Statistics
+        ' Ensure UserForm is named "frm_link_checker"
         Dim frm As New frm_link_checker
-        frm.LoadData finalData
-        frm.Show vbModeless ' Modeless allows interaction with sheet
+        frm.LoadData finalData, totalFound
+        frm.Show vbModeless
+    End If
+
+End Sub
+
+' Helper: Centralized Logic check
+Private Function CheckFormula(ByVal f As String, ByRef bExt As Boolean, ByRef bLNF As Boolean, ByRef bInt As Boolean) As Boolean
+    bExt = False: bLNF = False: bInt = False
+    
+    ' Priority 1: External ([)
+    If InStr(1, f, "[", vbBinaryCompare) > 0 Then
+        bExt = True
+        CheckFormula = True
+        Exit Function
     End If
     
+    ' Priority 2: LNF Custom Func
+    If InStr(1, f, "LNF_", vbTextCompare) > 0 Then
+        bLNF = True
+        CheckFormula = True
+        Exit Function
+    End If
+    
+    ' Priority 3: Internal (!)
+    If InStr(1, f, "!", vbBinaryCompare) > 0 Then
+        bInt = True
+        CheckFormula = True
+        Exit Function
+    End If
+    
+    CheckFormula = False
+End Function
+
+' Helper: Store data into array
+Private Sub StoreResult(ByRef arr() As Variant, idx As Long, addr As String, fmla As String, bExt As Boolean, bLNF As Boolean, bInt As Boolean)
+    arr(idx, 1) = addr
+    arr(idx, 3) = fmla
+    
+    If bExt Then
+        arr(idx, 2) = "External"
+    ElseIf bLNF Then
+        arr(idx, 2) = "LNF_Func"
+    Else
+        arr(idx, 2) = "Internal"
+    End If
 End Sub
 
 

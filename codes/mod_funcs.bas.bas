@@ -51,7 +51,7 @@ Public Sub ApplyTableStyle(nHeaderRows As Long)
         ' Basic Formatting
         .Interior.Color = RGB(0, 112, 192) ' Business Blue
         .Font.Color = vbWhite
-        .Font.Bold = True
+        .Font.bold = True
         .Font.Name = "Arial"
         .HorizontalAlignment = xlCenter
         .VerticalAlignment = xlCenter
