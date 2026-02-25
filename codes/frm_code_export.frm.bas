@@ -92,7 +92,7 @@ Private Sub UserForm_Initialize()
     With txtResult
         .Left = MARGIN: .Top = currentTop: .Width = Me.InsideWidth - (MARGIN * 2)
         .Height = Me.InsideHeight - currentTop - MARGIN - 20
-        .Multiline = True
+        .MultiLine = True
         .ScrollBars = fmScrollBarsVertical
         .Font.Name = "Consolas" ' Monospace font for code
         .Font.Size = 9

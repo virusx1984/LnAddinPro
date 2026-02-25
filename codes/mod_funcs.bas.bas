@@ -1,3 +1,18 @@
+' Purpose: Safely unloads the form if an invalid selection is detected during
+'          initialization (e.g., a Chart or Shape is selected instead of a Cell).
+' Method: Called via Application.OnTime to avoid conflicts during Form_Initialize.
+Public Sub CloseCommentEditor()
+    On Error Resume Next
+    Unload frm_comment_editor
+    On Error GoTo 0
+End Sub
+
+'+==========================================================+
+'|                                                          |
+'|                        <-- SECTION END -->               |
+'|                                                          |
+'+==========================================================+
+
 ' Define a simple Type to hold our data temporarily
 Private Type LinkData
     Address As String
@@ -55,9 +70,9 @@ Public Sub ApplyTableStyle(nHeaderRows As Long)
         .Font.Name = "Arial"
         .HorizontalAlignment = xlCenter
         .VerticalAlignment = xlCenter
-        
         ' Clear all existing borders first
         .Borders.LineStyle = xlNone
+        .WrapText = True
         
         ' A. Vertical Separators (Always White)
         With .Borders(xlInsideVertical)
@@ -133,15 +148,15 @@ Public Sub ApplyTableStyle(nHeaderRows As Long)
     ' ---------------------------------------------------------
     rngFull.Columns.AutoFit
     
-    ' Cap width at 50
-    For c = 1 To rngFull.Columns.count
-        If rngFull.Columns(c).ColumnWidth > 50 Then
-            rngFull.Columns(c).ColumnWidth = 50
-            rngFull.Columns(c).WrapText = True
-        Else
-            rngFull.Columns(c).WrapText = False
-        End If
-    Next c
+'    ' Cap width at 50
+'    For c = 1 To rngFull.Columns.count
+'        If rngFull.Columns(c).ColumnWidth > 50 Then
+'            rngFull.Columns(c).ColumnWidth = 50
+'            rngFull.Columns(c).WrapText = True
+'        Else
+'            rngFull.Columns(c).WrapText = False
+'        End If
+'    Next c
     
     ' Row Heights
     rngHeader.RowHeight = 20

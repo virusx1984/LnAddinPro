@@ -4,6 +4,8 @@ Option Explicit
 
 Public WithEvents btnOK As MSForms.CommandButton
 
+ Const VERSION = "Version 1.1.0"
+
 Private Sub UserForm_Initialize()
     ' --- Setup Form ---
     Me.Caption = "About LnAddinPro"
@@ -32,7 +34,7 @@ Private Sub UserForm_Initialize()
     
     ' --- 2. Version ---
     With Me.Controls.Add("Forms.Label.1", "lblVersion")
-        .Caption = "Version 1.0.9"
+        .Caption = VERSION
         .Left = MARGIN: .Top = currentTop: .Width = LABEL_W: .Height = 15
         .Font.Name = "Segoe UI"
         .Font.Size = 10

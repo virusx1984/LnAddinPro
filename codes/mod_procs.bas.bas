@@ -5,6 +5,13 @@
 ' Prevents UI freeze when thousands of errors exist.
 Private Const UI_DISPLAY_LIMIT As Long = 200
 
+' Note: Shows the form as Modal to focus the user on the editing task.
+Public Sub LNS_ShowCommentEditor(control As IRibbonControl)
+    On Error Resume Next
+    frm_comment_editor.Show vbModal
+    On Error GoTo 0
+End Sub
+
 Public Sub LNS_ShowLinkChecker(control As IRibbonControl)
     Dim rngFormulas As Range
     Dim area As Range

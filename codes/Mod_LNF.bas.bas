@@ -168,7 +168,7 @@ Public Function LNF_RegexExtract(ByVal sourceText As String, ByVal pattern As St
     
     With regEx
         .Global = False      ' Return only the first match
-        .Multiline = False
+        .MultiLine = False
         .ignoreCase = ignoreCase
         .pattern = pattern
     End With
