@@ -114,6 +114,18 @@ Public Sub Register_LNF_Functions()
             "returnColOffset: The number of columns to the right to retrieve data from (0 = same column).", _
             "matchIndex: Which match instance to return (1 = first, 2 = second, etc.)." _
         )
+        
+    ' --- 7. LNF_FT_AllocFormula ---
+    Application.MacroOptions _
+        Macro:="LNF_FT_AllocFormula", _
+        Description:="Generates the formula text for the current cell. Deduction accepts multiple arguments like SUM.", _
+        category:=categoryName, _
+        ArgumentDescriptions:=Array( _
+            "anchorCell: The cell immediately left of the result area.", _
+            "dataCell: The first cell of the data row.", _
+            "deductCells: The cells to deduct." _
+        )
+
     
     ' Optional: Confirmation message for debugging (comment out in production)
     ' MsgBox "LNF Function descriptions registered successfully.", vbInformation
@@ -282,4 +294,112 @@ Public Function LNF_VLookupNth(ByVal lookupVal As Variant, ByVal searchRng As Ra
             End If
         End If
     Next cell
+End Function
+
+' ==============================================================================
+' UDF: LNF_FT_AllocFormula
+' Purpose: Generate the formula text for the CURRENT cell.
+'
+' IMPORTANT:
+'   anchorCell is the cell IMMEDIATELY TO THE LEFT of the result area.
+'   The real start column is derived as anchorCell.Column + 1.
+'   The result row is taken from the calling cell (Application.Caller.Row).
+'
+' Usage (enter in G48, drag right):
+'   =LNF_FT_AllocFormula($F$48, $G$45, $F$45)                    ' one deduction
+'   =LNF_FT_AllocFormula($F$48, $G$45, $F$45, $F$47, $G$50)      ' many deductions
+'   =LNF_FT_AllocFormula($F$48, $G$45, $F$45:$G$45, $J$50)       ' mixed range + cell
+'   =LNF_FT_AllocFormula($F$48, $G$45, $F:$F)                    ' whole column
+'
+' @param anchorCell   Cell immediately to the LEFT of the result area.
+' @param dataCell     First cell of the data row.
+' @param deductCells  One or more deduction cells / ranges / constants.
+'                     Rendered as SUM($F$45,$F$47,...) when more than one.
+' @return             Formula text (no leading "="), or "#ERR: ..." string.
+' ==============================================================================
+Public Function LNF_FT_AllocFormula( _
+    ByVal anchorCell As Range, _
+    ByVal dataCell As Range, _
+    ParamArray deductCells() As Variant _
+) As String
+
+    Dim caller As Range, rng As Range, area As Range
+    Dim tCol As String, sCol As String, prevCol As String
+    Dim tIdx As Long, sIdx As Long, dataRow As Long, resultRow As Long
+    Dim deductExpr As String, cumSum As String
+    Dim i As Long, j As Long
+    Dim item As Variant
+    Dim addrList As String
+    Dim count As Long
+
+    ' --- Get the calling cell (address only; no circular reference) ---
+    On Error Resume Next
+    Set caller = Application.caller
+    On Error GoTo 0
+    If caller Is Nothing Then
+        LNF_FT_AllocFormula = "#ERR: no caller"
+        Exit Function
+    End If
+
+    ' --- Geometry ---
+    tCol = Split(caller.Address(True, False), "$")(0)
+    tIdx = caller.Column
+    resultRow = caller.Row
+
+    sIdx = anchorCell.Column + 1
+    sCol = Split(Cells(1, sIdx).Address(True, False), "$")(0)
+
+    dataRow = dataCell.Row
+
+    ' --- Validation ---
+    If sIdx < 1 Then
+        LNF_FT_AllocFormula = "#ERR: invalid anchorCell"
+        Exit Function
+    End If
+    If tIdx < sIdx Then
+        LNF_FT_AllocFormula = "#ERR: caller is left of the derived start column"
+        Exit Function
+    End If
+    If UBound(deductCells) < LBound(deductCells) Then
+        LNF_FT_AllocFormula = "#ERR: at least one deduction cell is required"
+        Exit Function
+    End If
+
+    ' --- Build deduction expression from all ParamArray items (inlined) ---
+    addrList = ""
+    count = 0
+    For i = LBound(deductCells) To UBound(deductCells)
+        If IsObject(deductCells(i)) Then
+            Set rng = deductCells(i)
+            For j = 1 To rng.Areas.count
+                Set area = rng.Areas(j)
+                If Len(addrList) > 0 Then addrList = addrList & ","
+                addrList = addrList & area.Address(True, True)
+                count = count + 1
+            Next j
+        Else
+            If Len(addrList) > 0 Then addrList = addrList & ","
+            addrList = addrList & CStr(deductCells(i))
+            count = count + 1
+        End If
+    Next i
+
+    If count = 1 Then
+        deductExpr = addrList
+    Else
+        deductExpr = "SUM(" & addrList & ")"
+    End If
+
+    ' --- Cumulative supply ---
+    cumSum = "SUM($" & sCol & dataRow & ":" & tCol & dataRow & ")"
+
+    ' --- Previous column letter ---
+    prevCol = Split(Cells(1, tIdx - 1).Address(True, False), "$")(0)
+
+    ' --- Assemble ---
+    LNF_FT_AllocFormula = "=MAX(0,IF(COLUMN(" & tCol & dataRow & ")=" & _
+                          "COLUMN($" & sCol & "$" & dataRow & ")," & _
+                          cumSum & "-" & deductExpr & "," & _
+                          cumSum & "-SUM(" & prevCol & resultRow & ":$" & sCol & resultRow & ")-" & deductExpr & "))"
+
 End Function
