@@ -3,6 +3,7 @@ Option Explicit
 
 Public WithEvents btnRun As MSForms.CommandButton
 Public WithEvents btnCancel As MSForms.CommandButton
+Public WithEvents chkExcludeZeros As MSForms.CheckBox
 
 Private Sub UserForm_Initialize()
     ' Purpose: Dynamically create and configure controls on the UserForm.
@@ -116,6 +117,18 @@ Private Sub UserForm_Initialize()
         .Text = ""
     End With
     yPos = yPos + CONTROL_HEIGHT + SPACING + 10
+    
+    ' --- Section 4b: Exclude Zeros Option ---
+    Set chkExcludeZeros = Me.Controls.Add("Forms.CheckBox.1", "chkExcludeZeros")
+    With chkExcludeZeros
+        .Caption = "Exclude rows where numeric value is 0"
+        .Left = 10
+        .Top = yPos
+        .Width = CONTROL_WIDTH + 50
+        .Height = CONTROL_HEIGHT
+        .Value = True          ' On by default
+    End With
+    yPos = yPos + CONTROL_HEIGHT + SPACING + 5
 
     ' --- Section 5: Buttons ---
     Set btnRun = Me.Controls.Add("Forms.CommandButton.1", "btnRun")
@@ -186,14 +199,21 @@ Private Sub btnRun_Click()
     Set output_range = output_range.Cells(1, 1)
     
     ' Call the MeltData function
-    result = MeltData(table_range, id_columns, var_name)
+    result = MeltData(table_range, id_columns, var_name, chkExcludeZeros.Value)
     
     ' Check if result is valid
-    If IsEmpty(result) Then
-        MsgBox "Error in MeltData function. Please check your inputs.", vbCritical
+    If IsError(result) Then
+        MsgBox "MeltData failed: please make sure the ID columns are the leftmost " & _
+               "columns of the table and both ranges are on the same sheet.", _
+               vbCritical, "Melt Error"
         Exit Sub
     End If
-    
+
+    If IsEmpty(result) Then
+        MsgBox "MeltData returned no data.", vbExclamation
+        Exit Sub
+    End If
+
     ' Write the result to the output range
     output_range.Resize(UBound(result, 1), UBound(result, 2)).Value = result
     

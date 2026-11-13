@@ -1033,7 +1033,12 @@ End Function
 ' @param idColumnsRange (Range): The range of columns to be used as index (id_vars).
 ' @param variableName (String): The header name for the "Variable" column in the output.
 ' @return (Variant): A 2D array with columns [index columns..., variableName, Value]. Returns #VALUE! error on failure.
-Public Function MeltData(ByVal tableRange As Range, ByVal idColumnsRange As Range, ByVal variableName As String) As Variant
+Public Function MeltData( _
+        ByVal tableRange As Range, _
+        ByVal idColumnsRange As Range, _
+        ByVal variableName As String, _
+        Optional ByVal excludeZeros As Boolean = False _
+    ) As Variant
     
     ' --- Variable Declarations ---
     Dim data As Variant
@@ -1140,24 +1145,56 @@ Public Function MeltData(ByVal tableRange As Range, ByVal idColumnsRange As Rang
         
         ' Iterate through each value column that needs to be melted.
         For dataCol = idColCount + 1 To totalCols
-            
-            ' 1. Copy ID Columns (data(dataRow, 1) to data(dataRow, idColCount))
+
+            Dim cellVal As Variant
+            cellVal = data(dataRow, dataCol)
+
+            ' --- Optional: skip numeric zeros ---
+            If excludeZeros Then
+                ' Treat blank cells as 0
+                Dim isBlank As Boolean
+                isBlank = IsEmpty(cellVal) Or (VarType(cellVal) = vbString And Len(Trim(CStr(cellVal))) = 0)
+
+                If isBlank Then
+                    GoTo NextValueCol
+                ElseIf IsNumeric(cellVal) Then
+                    If CDbl(cellVal) = 0 Then
+                        GoTo NextValueCol
+                    End If
+                End If
+            End If
+
+            ' 1. Copy ID Columns
             For resultCol = 1 To idColCount
                 result(currentResultRow, resultCol) = data(dataRow, resultCol)
             Next resultCol
-            
-            ' 2. Assign Variable Name (Header of the current value column)
+
+            ' 2. Variable name
             result(currentResultRow, idColCount + 1) = headers(1, dataCol)
-            
-            ' 3. Assign Value
-            result(currentResultRow, idColCount + 2) = data(dataRow, dataCol)
-            
-            ' Move to next result row
+
+            ' 3. Value
+            result(currentResultRow, idColCount + 2) = cellVal
+
             currentResultRow = currentResultRow + 1
+
+NextValueCol:
         Next dataCol
+        
     Next dataRow
     
-    ' --- Return the Array ---
+    ' --- Trim trailing unused rows ---
+    If currentResultRow - 1 < resultRowCount Then
+        Dim trimmed() As Variant
+        Dim rr As Long, cc As Long
+        ReDim trimmed(1 To currentResultRow - 1, 1 To resultColCount)
+        For rr = 1 To currentResultRow - 1
+            For cc = 1 To resultColCount
+                trimmed(rr, cc) = result(rr, cc)
+            Next cc
+        Next rr
+        result = trimmed
+    End If
+
     MeltData = result
     
 End Function
