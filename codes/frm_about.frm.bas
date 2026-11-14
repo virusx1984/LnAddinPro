@@ -4,7 +4,7 @@ Option Explicit
 
 Public WithEvents btnOK As MSForms.CommandButton
 
- Const VERSION = "Version 1.1.1"
+ Const VERSION = "Version 1.1.2"
 
 Private Sub UserForm_Initialize()
     ' --- Setup Form ---

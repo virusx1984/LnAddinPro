@@ -360,4 +360,16 @@ Public Sub LNS_ShowCompareForm(control As IRibbonControl)
     
     ' Display the form
     frm_compare_setup.Show
+End Sub
+
+' Purpose: Launches the Text to HTML UserForm (frm_text_to_html).
+' The control parameter is REQUIRED by the Ribbon's onAction mechanism.
+Public Sub LNS_ShowText2HtmlForm(control As IRibbonControl)
+    ' LNS: LnAddinPro Sub - Shows the UserForm for converting pasted text/code to an HTML file.
+    
+    ' Load the form into memory
+    Load frm_text_to_html
+    
+    ' Display the form
+    frm_text_to_html.Show
 End Sub
